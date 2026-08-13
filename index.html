@@ -408,6 +408,10 @@
             Case intake
             <span>Upload documents, extract, checklist</span>
           </button>
+          <button type="button" data-view="case-log" role="menuitem">
+            Case log
+            <span>Browse, export, and edit saved cases</span>
+          </button>
           <button type="button" data-view="email" role="menuitem">
             Email writer
             <span>Draft a revision request from the case</span>
@@ -503,9 +507,11 @@
       </div>
     </div>
   </section>
+</div>
 
+<div id="view-case-log" class="view" hidden>
   <!-- CASE LOG -->
-  <section class="panel" style="margin-top:24px;">
+  <section class="panel">
     <div class="panel-head">
       <h2>Case log</h2>
       <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">

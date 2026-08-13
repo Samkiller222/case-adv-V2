@@ -3,18 +3,19 @@ import { el } from "./utils.js";
 import { VIEW_META } from "./config.js";
 import { loadCaseIntoEmail } from "./email-writer.js";
 
-const viewIntakeEl = el("view-intake");
-const viewEmailEl = el("view-email");
-const viewOptionsEl = el("view-options");
+const viewEls = {
+  intake: el("view-intake"),
+  "case-log": el("view-case-log"),
+  email: el("view-email"),
+  options: el("view-options"),
+};
 const menuToggle = el("menuToggle");
 const appMenu = el("appMenu");
 
 let emailAutoLoaded = false;
 
 export function switchView(name) {
-  viewIntakeEl.hidden = name !== "intake";
-  viewEmailEl.hidden = name !== "email";
-  viewOptionsEl.hidden = name !== "options";
+  Object.entries(viewEls).forEach(([viewName, node]) => { node.hidden = viewName !== name; });
 
   const meta = VIEW_META[name];
   el("viewEyebrow").textContent = meta.eyebrow;

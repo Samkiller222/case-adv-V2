@@ -4,6 +4,11 @@
     "title": "Employment case intake",
     "subtitle": "Upload supporting documents for a case (passport, employer letter, appointment or flight confirmation). The register reads them and drafts the case record below for you to check before export."
   },
+  "case-log": {
+    "eyebrow": "Case Register · Case Log",
+    "title": "Case log",
+    "subtitle": "Every saved case — export to CSV, back up to JSON, or reopen one to edit."
+  },
   "email": {
     "eyebrow": "Case Register · Correspondence",
     "title": "Email writer",
