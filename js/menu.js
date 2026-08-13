@@ -2,10 +2,12 @@
 import { el } from "./utils.js";
 import { VIEW_META } from "./config.js";
 import { loadCaseIntoEmail } from "./email-writer.js";
+import { renderStatistics } from "./statistics.js";
 
 const viewEls = {
   intake: el("view-intake"),
   "case-log": el("view-case-log"),
+  statistics: el("view-statistics"),
   email: el("view-email"),
   options: el("view-options"),
 };
@@ -31,6 +33,13 @@ export function switchView(name) {
   if (name === "email" && !emailAutoLoaded) {
     emailAutoLoaded = true;
     loadCaseIntoEmail();
+  }
+
+  // Recompute every time (not just once) — unlike the email view, the case
+  // log can change between visits (new saves, edits, deletes), so a stale
+  // one-time snapshot would be actively misleading here.
+  if (name === "statistics") {
+    renderStatistics();
   }
 }
 

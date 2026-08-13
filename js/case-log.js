@@ -16,14 +16,57 @@ const logBody = el("logBody");
 const logCount = el("logCount");
 const setLogStatus = makeStatusSetter("logStatus");
 
+// Search/dropdown filter state for the case log table. These only affect
+// what's rendered — state.log itself (the source of truth) is never
+// filtered or reordered, so edit/remove always act on the real entry.
+const filters = { query: "", result: "", checklist: "" };
+
+function matchesFilters(rec) {
+  if (filters.query) {
+    const haystack = [rec.name, rec.surname, rec.passport_number, rec.employer, rec.job_title]
+      .filter(Boolean).join(" ").toLowerCase();
+    if (!haystack.includes(filters.query)) return false;
+  }
+  if (filters.result) {
+    if (filters.result === "__blank__") {
+      if ((rec.result || "").trim()) return false;
+    } else if ((rec.result || "") !== filters.result) {
+      return false;
+    }
+  }
+  if (filters.checklist) {
+    const list = rec.checklist || [];
+    const flagged = list.filter(c => c.status === "Non-compliant" || c.status === "Missing").length;
+    if (filters.checklist === "none" && list.length) return false;
+    if (filters.checklist === "clear" && (!list.length || flagged !== 0)) return false;
+    if (filters.checklist === "issues" && flagged === 0) return false;
+  }
+  return true;
+}
+
 export function renderLog() {
-  logCount.textContent = `${state.log.length} case${state.log.length === 1 ? "" : "s"}`;
+  // Keep each row's original state.log index alongside it — filtering
+  // must never renumber rows, since the edit/remove buttons below act on
+  // that index against the real (unfiltered) log.
+  const filtered = state.log
+    .map((rec, idx) => ({ rec, idx }))
+    .filter(({ rec }) => matchesFilters(rec));
+  const filtersActive = !!(filters.query || filters.result || filters.checklist);
+
+  logCount.textContent = filtersActive
+    ? `${filtered.length} of ${state.log.length} case${state.log.length === 1 ? "" : "s"}`
+    : `${state.log.length} case${state.log.length === 1 ? "" : "s"}`;
+
   if (state.log.length === 0) {
     logBody.innerHTML = `<tr><td colspan="12" style="color:var(--muted); text-align:center;">No cases logged yet.</td></tr>`;
     return;
   }
+  if (filtered.length === 0) {
+    logBody.innerHTML = `<tr><td colspan="12" style="color:var(--muted); text-align:center;">No cases match these filters.</td></tr>`;
+    return;
+  }
   logBody.innerHTML = "";
-  state.log.forEach((rec, idx) => {
+  filtered.forEach(({ rec, idx }) => {
     const tr = document.createElement("tr");
     const flagged = (rec.checklist || []).filter(c => c.status === "Non-compliant" || c.status === "Missing").length;
     const checklistCell = !rec.checklist || !rec.checklist.length
@@ -154,7 +197,43 @@ function initJsonBackup() {
   });
 }
 
+function initLogFilters() {
+  const queryInput = el("logFilterQuery");
+  const resultSelect = el("logFilterResult");
+  const checklistSelect = el("logFilterChecklist");
+  const clearBtn = el("logFilterClearBtn");
+
+  // The result dropdown's options come from the same field config the
+  // draft form uses, so it can never drift out of sync with real values.
+  const resultField = FIELDS.find(f => f.key === "result");
+  const resultOptions = (resultField ? resultField.options : []).filter(Boolean);
+  resultSelect.innerHTML = [
+    '<option value="">All results</option>',
+    '<option value="__blank__">Not set</option>',
+    ...resultOptions.map(opt => `<option value="${escapeHtml(opt)}">${escapeHtml(opt)}</option>`),
+  ].join("");
+
+  queryInput.addEventListener("input", () => {
+    filters.query = queryInput.value.trim().toLowerCase();
+    renderLog();
+  });
+  resultSelect.addEventListener("change", () => {
+    filters.result = resultSelect.value;
+    renderLog();
+  });
+  checklistSelect.addEventListener("change", () => {
+    filters.checklist = checklistSelect.value;
+    renderLog();
+  });
+  clearBtn.addEventListener("click", () => {
+    filters.query = ""; filters.result = ""; filters.checklist = "";
+    queryInput.value = ""; resultSelect.value = ""; checklistSelect.value = "";
+    renderLog();
+  });
+}
+
 export function initCaseLog() {
+  initLogFilters();
   initCsvExport();
   initJsonBackup();
 }

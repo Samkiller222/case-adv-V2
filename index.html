@@ -370,6 +370,38 @@
   .row-edit{ color:var(--accent); background:none; border:none; cursor:pointer; font-family:var(--font-data); margin-right:10px; }
   .row-del{ color:var(--stamp); background:none; border:none; cursor:pointer; font-family:var(--font-data); }
 
+  /* case log filters */
+  .log-filters{
+    display:flex; flex-wrap:wrap; gap:8px; align-items:center;
+    padding:14px 18px 4px;
+  }
+  .log-filters input[type="text"]{
+    flex:1 1 240px; min-width:180px;
+    font-family:var(--font-body); font-size:13px;
+    padding:8px 10px; border:1px solid var(--border); border-radius:var(--radius-sm);
+    background:var(--surface-alt); color:var(--text);
+  }
+  .log-filters select{
+    flex:none; font-family:var(--font-body); font-size:12.5px;
+    padding:8px 10px; border:1px solid var(--border); border-radius:var(--radius-sm);
+    background:var(--surface-alt); color:var(--text);
+  }
+  .log-filters input:focus, .log-filters select:focus{
+    outline:none; border-color:var(--accent); box-shadow:0 0 0 3px var(--accent-bg);
+  }
+
+  /* statistics */
+  .stat-list{ display:flex; flex-direction:column; gap:14px; }
+  .stat-list.scroll{ max-height:360px; overflow-y:auto; padding-right:6px; }
+  .stat-row-head{ display:flex; justify-content:space-between; align-items:baseline; gap:10px; margin-bottom:5px; }
+  .stat-label{ font-size:13px; font-weight:600; color:var(--text); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .stat-count{ flex:none; font-family:var(--font-data); font-size:11.5px; color:var(--muted); }
+  .stat-bar-track{
+    height:10px; border-radius:999px; background:var(--surface-alt);
+    border:1px solid var(--border); overflow:hidden;
+  }
+  .stat-bar-fill{ height:100%; border-radius:999px; background:var(--accent); }
+
   .stamped{ position:relative; }
   .stamped::after{
     content:"EXTRACTED"; position:absolute; top:10px; right:14px;
@@ -411,6 +443,10 @@
           <button type="button" data-view="case-log" role="menuitem">
             Case log
             <span>Browse, export, and edit saved cases</span>
+          </button>
+          <button type="button" data-view="statistics" role="menuitem">
+            Statistics
+            <span>Final decisions, employers, job titles</span>
           </button>
           <button type="button" data-view="email" role="menuitem">
             Email writer
@@ -523,6 +559,17 @@
       </div>
     </div>
     <div class="status" id="logStatus" style="padding:0 18px; margin-top:-4px;"></div>
+    <div class="log-filters">
+      <input type="text" id="logFilterQuery" placeholder="Search name, surname, passport #, employer, job title…">
+      <select id="logFilterResult"></select>
+      <select id="logFilterChecklist">
+        <option value="">All checklist states</option>
+        <option value="issues">Has issues</option>
+        <option value="clear">Clear</option>
+        <option value="none">Not checked</option>
+      </select>
+      <button type="button" class="btn secondary" id="logFilterClearBtn" style="padding:7px 14px; font-size:12.5px;">Clear filters</button>
+    </div>
     <div class="panel-body log-wrap">
       <table id="logTable">
         <thead>
@@ -536,6 +583,52 @@
           <tr><td colspan="12" style="color:var(--muted); text-align:center;">No cases logged yet.</td></tr>
         </tbody>
       </table>
+    </div>
+  </section>
+</div>
+
+<div id="view-statistics" class="view" hidden>
+  <div class="grid">
+
+    <!-- FINAL DECISIONS -->
+    <section class="panel">
+      <div class="panel-head">
+        <h2>Final decisions</h2>
+        <span class="tag" id="statsCaseCount">0 cases</span>
+      </div>
+      <div class="panel-body" id="statsDecisions">
+        <div class="empty-state">
+          <img class="mark" src="icons/logo.png" alt="">
+          Statistics will appear here once you've saved at least one case.
+        </div>
+      </div>
+    </section>
+
+    <!-- EMPLOYERS -->
+    <section class="panel">
+      <div class="panel-head">
+        <h2>Employers</h2>
+      </div>
+      <div class="panel-body" id="statsEmployers">
+        <div class="empty-state">
+          <img class="mark" src="icons/logo.png" alt="">
+          Statistics will appear here once you've saved at least one case.
+        </div>
+      </div>
+    </section>
+
+  </div>
+
+  <!-- JOB TITLES -->
+  <section class="panel" style="margin-top:24px;">
+    <div class="panel-head">
+      <h2>Job titles</h2>
+    </div>
+    <div class="panel-body" id="statsJobTitles">
+      <div class="empty-state">
+        <img class="mark" src="icons/logo.png" alt="">
+        Statistics will appear here once you've saved at least one case.
+      </div>
     </div>
   </section>
 </div>

@@ -9,6 +9,11 @@
     "title": "Case log",
     "subtitle": "Every saved case — export to CSV, back up to JSON, or reopen one to edit."
   },
+  "statistics": {
+    "eyebrow": "Case Register · Statistics",
+    "title": "Statistics",
+    "subtitle": "Final decisions, employers, and job titles across every saved case."
+  },
   "email": {
     "eyebrow": "Case Register · Correspondence",
     "title": "Email writer",

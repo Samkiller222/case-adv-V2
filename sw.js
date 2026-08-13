@@ -17,7 +17,7 @@
  * that must reach already-installed users promptly — it forces the old
  * cache to be dropped on activate.
  */
-const CACHE_VERSION = "v3";
+const CACHE_VERSION = "v4";
 const SHELL_CACHE = `case-register-shell-${CACHE_VERSION}`;
 const CDN_CACHE = `case-register-cdn-${CACHE_VERSION}`;
 
@@ -40,6 +40,7 @@ const SHELL_ASSETS = [
   "./js/extraction.js",
   "./js/record.js",
   "./js/case-log.js",
+  "./js/statistics.js",
   "./js/email-writer.js",
   "./data/fields.json",
   "./data/checklist-items.json",
