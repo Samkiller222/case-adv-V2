@@ -1,0 +1,697 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Case Register — Document Extractor</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/logo.png" type="image/png">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<meta name="theme-color" content="#1B2733">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Case Register">
+<script>
+  // Set the theme before first paint to avoid a light/dark flash.
+  (function () {
+    try {
+      var stored = localStorage.getItem("case_register_theme");
+      var theme = stored || (window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
+      document.documentElement.setAttribute("data-theme", theme);
+    } catch (e) {}
+  })();
+</script>
+<style>
+  :root{
+    --bg:#EDF0F2;
+    --surface:#FFFFFF;
+    --surface-alt:#F5F7F8;
+    --border:#D7DEE3;
+    --text:#1B2733;
+    --muted:#5C6B78;
+    --header-bg:#1B2733;
+    --header-text:#EDF0F2;
+    --header-muted:#AEB9C4;
+    --stamp:#B23A2F;
+    --stamp-dark:#8C2C22;
+    --stamp-bg:#FBF1EF;
+    --accent:#B23A2F;
+    --accent-dark:#8C2C22;
+    --accent-bg:#FBF1EF;
+    --brass:#A98A4B;
+    --brass-bg:#FBF6EA;
+    --ok:#3A6B52;
+    --ok-bg:#EAF3EE;
+    --shadow: 0 1px 2px rgba(15,23,32,.05), 0 8px 20px rgba(15,23,32,.06);
+    --shadow-sm: 0 1px 2px rgba(15,23,32,.06);
+    --radius-lg:14px;
+    --radius-md:10px;
+    --radius-sm:8px;
+    --font-display: 'Source Serif Pro', 'Iowan Old Style', Georgia, serif;
+    --font-body: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+    --font-data: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  }
+
+  :root[data-theme="dark"]{
+    --bg:#10151B;
+    --surface:#171E26;
+    --surface-alt:#1E2731;
+    --border:#2B3742;
+    --text:#E8EDF1;
+    --muted:#93A2AD;
+    --header-bg:#0B0F14;
+    --header-text:#EDF0F2;
+    --header-muted:#8493A0;
+    --stamp:#E2685C;
+    --stamp-dark:#B23A2F;
+    --stamp-bg:rgba(226,104,92,.12);
+    --accent:#E2685C;
+    --accent-dark:#B23A2F;
+    --accent-bg:rgba(226,104,92,.12);
+    --brass:#D3B476;
+    --brass-bg:rgba(211,180,118,.12);
+    --ok:#63B98D;
+    --ok-bg:rgba(99,185,141,.12);
+    --shadow: 0 1px 2px rgba(0,0,0,.3), 0 10px 24px rgba(0,0,0,.35);
+    --shadow-sm: 0 1px 2px rgba(0,0,0,.35);
+  }
+
+  *{box-sizing:border-box;}
+  body{
+    margin:0; background:var(--bg); color:var(--text);
+    font-family:var(--font-body);
+    min-height:100vh;
+    transition:background-color .2s ease, color .2s ease;
+  }
+  :focus-visible{ outline:2px solid var(--accent); outline-offset:2px; }
+
+  header{
+    background:var(--header-bg); color:var(--header-text);
+    padding:28px 32px 22px;
+    border-bottom:4px solid var(--brass);
+    transition:background-color .2s ease;
+  }
+  .header-inner{ display:flex; align-items:flex-start; justify-content:space-between; gap:20px; max-width:1180px; margin:0 auto; }
+  header .eyebrow{
+    font-family:var(--font-data); font-size:11px; letter-spacing:.14em;
+    text-transform:uppercase; color:var(--brass); margin-bottom:6px;
+  }
+  header h1{
+    font-family:var(--font-display); font-weight:600; font-size:28px; margin:0;
+  }
+  header p{ margin:6px 0 0; color:var(--header-muted); font-size:13.5px; max-width:640px; }
+
+  .theme-toggle, .menu-toggle{
+    flex:none; display:inline-flex; align-items:center; justify-content:center;
+    width:38px; height:38px; border-radius:999px; margin-top:2px;
+    border:1px solid rgba(237,240,242,.25); background:rgba(237,240,242,.06);
+    color:var(--header-text); cursor:pointer;
+    transition:background-color .15s ease, transform .1s ease;
+  }
+  .theme-toggle:hover, .menu-toggle:hover{ background:rgba(237,240,242,.16); }
+  .theme-toggle:active, .menu-toggle:active{ transform:scale(.92); }
+  .theme-toggle svg, .menu-toggle svg{ width:18px; height:18px; }
+  .theme-toggle .icon-moon{ display:none; }
+  :root[data-theme="dark"] .theme-toggle .icon-sun{ display:none; }
+  :root[data-theme="dark"] .theme-toggle .icon-moon{ display:block; }
+
+  .header-left{ display:flex; align-items:flex-start; gap:14px; }
+  .menu-wrap{ position:relative; flex:none; }
+  .brand-logo{
+    width:40px; height:40px; flex:none; margin-top:2px;
+    border-radius:var(--radius-sm); object-fit:cover;
+    box-shadow:0 0 0 1px rgba(237,240,242,.18);
+  }
+  .app-menu{
+    position:absolute; top:calc(100% + 8px); left:0; z-index:20;
+    min-width:220px; background:var(--surface); border:1px solid var(--border);
+    border-radius:var(--radius-md); box-shadow:var(--shadow); padding:6px;
+  }
+  .app-menu[hidden]{ display:none; }
+  .app-menu button{
+    display:flex; flex-direction:column; align-items:flex-start; gap:1px;
+    width:100%; text-align:left; padding:9px 10px; border-radius:var(--radius-sm);
+    border:none; background:none; color:var(--text); cursor:pointer;
+    font-family:var(--font-body); font-size:13.5px; font-weight:600;
+  }
+  .app-menu button:hover{ background:var(--surface-alt); }
+  .app-menu button.active{ background:var(--accent-bg); color:var(--accent); }
+  .app-menu button span{
+    font-weight:400; font-size:11.5px; color:var(--muted); font-family:var(--font-body);
+  }
+  .app-menu button.active span{ color:inherit; opacity:.8; }
+
+  main{ max-width:1180px; margin:0 auto; padding:28px 32px 80px; }
+
+  .grid{ display:grid; grid-template-columns:1fr 1fr; gap:24px; align-items:start; }
+  @media (max-width:900px){ .grid{ grid-template-columns:1fr; } }
+
+  .panel{
+    background:var(--surface); border:1px solid var(--border);
+    border-radius:var(--radius-lg); box-shadow:var(--shadow);
+    transition:background-color .2s ease, border-color .2s ease;
+  }
+  .panel-head{
+    display:flex; align-items:center; justify-content:space-between;
+    padding:14px 18px; border-bottom:1px solid var(--border);
+  }
+  .panel-head h2{
+    font-family:var(--font-display); font-size:16px; margin:0; font-weight:600;
+  }
+  .tag{
+    font-family:var(--font-data); font-size:10.5px; text-transform:uppercase;
+    letter-spacing:.08em; color:var(--muted); border:1px solid var(--border);
+    padding:3px 9px; border-radius:999px;
+  }
+  .tag.ok{ color:var(--ok); border-color:var(--ok); background:var(--ok-bg); }
+  .tag.err{ color:var(--stamp); border-color:var(--stamp); background:var(--stamp-bg); }
+
+  .badge{
+    font-family:var(--font-data); font-size:10.5px; text-transform:uppercase;
+    letter-spacing:.06em; padding:3px 9px; border-radius:999px; border:1px solid;
+    white-space:nowrap;
+  }
+  .badge.ok{ color:var(--ok); border-color:var(--ok); background:var(--ok-bg); }
+  .badge.err{ color:var(--stamp); border-color:var(--stamp); background:var(--stamp-bg); }
+  .badge.warn{ color:var(--brass); border-color:var(--brass); background:var(--brass-bg); }
+  .badge.muted{ color:var(--muted); border-color:var(--border); background:var(--surface-alt); }
+
+  .checklist-list{ display:flex; flex-direction:column; gap:10px; }
+  .checklist-item{
+    border:1px solid var(--border); border-radius:var(--radius-md); overflow:hidden;
+    transition:background-color .15s ease, border-color .2s ease;
+  }
+  .checklist-item-head{
+    display:flex; align-items:center; justify-content:space-between; gap:10px;
+    width:100%; padding:10px 12px; margin:0; border:none; background:none;
+    font-family:var(--font-body); color:var(--text); text-align:left; cursor:default;
+  }
+  .checklist-item.expandable .checklist-item-head{ cursor:pointer; }
+  .checklist-item.expandable .checklist-item-head:hover{ background:var(--surface-alt); }
+  .checklist-item-right{ display:flex; align-items:center; gap:8px; flex:none; }
+  .checklist-item-right .chevron{ width:14px; height:14px; color:var(--muted); flex:none; transition:transform .2s ease; }
+  .checklist-item.expanded .chevron{ transform:rotate(180deg); }
+  .checklist-label{ font-size:13px; font-weight:600; }
+  .checklist-edit{ display:none; flex-direction:column; padding:0 12px 12px; }
+  .checklist-item.expanded .checklist-edit{ display:flex; }
+  .checklist-edit .field-label{
+    display:block; font-size:10.5px; text-transform:uppercase; letter-spacing:.08em;
+    color:var(--muted); margin-bottom:5px; font-family:var(--font-data);
+  }
+  .checklist-edit select, .checklist-edit textarea{
+    width:100%; padding:8px 9px; border:1px solid var(--border); border-radius:var(--radius-sm);
+    font-family:var(--font-body); font-size:13px; background:var(--surface-alt); color:var(--text);
+  }
+  .checklist-edit textarea{ min-height:56px; resize:vertical; }
+  .checklist-edit select:focus, .checklist-edit textarea:focus{
+    outline:none; border-color:var(--accent); box-shadow:0 0 0 3px var(--accent-bg);
+  }
+  @media (prefers-reduced-motion: reduce){
+    .checklist-item-right .chevron{ transition:none; }
+  }
+  .panel-body{ padding:18px; }
+
+  .drop{
+    border:2px dashed var(--border); border-radius:var(--radius-md); padding:34px 18px;
+    text-align:center; color:var(--muted); cursor:pointer;
+    transition:border-color .15s ease, background-color .15s ease;
+  }
+  .drop:hover{ border-color:var(--brass); background:var(--surface-alt); }
+  .drop.drag{ border-color:var(--accent); background:var(--accent-bg); }
+  .drop strong{ color:var(--text); }
+  .drop input{ display:none; }
+
+  #fileList{ list-style:none; margin:14px 0 0; padding:0; font-family:var(--font-data); font-size:12.5px; }
+  #fileList li{
+    display:flex; justify-content:space-between; padding:6px 0;
+    border-bottom:1px solid var(--border); color:var(--muted);
+  }
+  #fileList li span.name{ color:var(--text); }
+  #fileList li button{
+    background:none; border:none; color:var(--stamp); cursor:pointer; font-family:var(--font-data); font-size:12px;
+  }
+
+  .keyrow{ margin-top:16px; }
+  .keyrow label{ font-size:12px; color:var(--muted); display:block; margin-bottom:5px; }
+  .keyrow input[type=password], .keyrow input[type=text], .keyrow select{
+    width:100%; font-family:var(--font-data); font-size:12.5px;
+    padding:9px 10px; border:1px solid var(--border); border-radius:var(--radius-sm);
+    background:var(--surface-alt); color:var(--text);
+    transition:border-color .15s ease, box-shadow .15s ease;
+  }
+  .keyrow input:focus, .keyrow select:focus{
+    outline:none; border-color:var(--accent); box-shadow:0 0 0 3px var(--accent-bg);
+  }
+  .keyrow small{ display:block; margin-top:5px; color:var(--muted); font-size:11px; line-height:1.5; }
+
+  .link-btn{
+    display:inline-block; margin-top:12px; background:none; border:none; padding:0;
+    color:var(--accent); cursor:pointer; font-family:var(--font-data); font-size:11.5px;
+  }
+  .link-btn:hover{ text-decoration:underline; }
+
+  .accent-picker{ position:relative; }
+  .accent-picker-btn{
+    display:flex; align-items:center; gap:9px; width:100%;
+    padding:9px 10px; border:1px solid var(--border); border-radius:var(--radius-sm);
+    background:var(--surface-alt); color:var(--text); cursor:pointer;
+    font-family:var(--font-body); font-size:13px;
+    transition:border-color .15s ease;
+  }
+  .accent-picker-btn:hover{ border-color:var(--accent); }
+  .accent-picker-btn .chev{ width:14px; height:14px; margin-left:auto; color:var(--muted); flex:none; }
+  .swatch{
+    width:14px; height:14px; border-radius:999px; flex:none;
+    border:1px solid rgba(0,0,0,.18); background:var(--swatch-color, currentColor);
+  }
+  .accent-menu{
+    position:absolute; top:calc(100% + 6px); left:0; right:0; z-index:20;
+    background:var(--surface); border:1px solid var(--border); border-radius:var(--radius-md);
+    box-shadow:var(--shadow); padding:6px;
+  }
+  .accent-menu[hidden]{ display:none; }
+  .accent-option{
+    display:flex; align-items:center; gap:10px; width:100%; text-align:left;
+    padding:8px 10px; border-radius:var(--radius-sm); border:none; background:none;
+    color:var(--text); cursor:pointer; font-family:var(--font-body); font-size:13px;
+  }
+  .accent-option:hover{ background:var(--surface-alt); }
+  .accent-option.active{ background:var(--accent-bg); color:var(--accent); font-weight:600; }
+
+  .btn{
+    font-family:var(--font-body); font-weight:600; font-size:13.5px;
+    padding:11px 20px; border-radius:var(--radius-sm); border:1px solid var(--text);
+    background:var(--text); color:var(--bg); cursor:pointer; letter-spacing:.01em;
+    transition:transform .08s ease, box-shadow .15s ease, opacity .15s ease;
+  }
+  .btn:hover:not(:disabled){ box-shadow:var(--shadow-sm); transform:translateY(-1px); }
+  .btn:active:not(:disabled){ transform:translateY(0); }
+  .btn:disabled{ opacity:.4; cursor:not-allowed; }
+  .btn.secondary{ background:transparent; color:var(--text); border-color:var(--border); }
+  .btn.stamp{ background:var(--accent); border-color:var(--accent-dark); color:#fff; }
+  .btn.ok-flash{ background:var(--ok); border-color:var(--ok); color:#fff; }
+
+  .actions{ display:flex; gap:10px; margin-top:18px; flex-wrap:wrap; }
+
+  .status{ font-family:var(--font-data); font-size:12px; color:var(--muted); margin-top:12px; min-height:16px; }
+  .status.busy::before{ content:"◌ "; }
+  .status.err{ color:var(--stamp); }
+
+  /* extracted form */
+  .field{ margin-bottom:12px; }
+  .field label{
+    display:block; font-size:10.5px; text-transform:uppercase; letter-spacing:.08em;
+    color:var(--muted); margin-bottom:4px; font-family:var(--font-data);
+  }
+  .field input, .field select, .field textarea{
+    width:100%; padding:8px 9px; border:1px solid var(--border); border-radius:var(--radius-sm);
+    font-family:var(--font-data); font-size:13px; background:var(--surface-alt); color:var(--text);
+    transition:border-color .15s ease, box-shadow .15s ease;
+  }
+  .field input:focus, .field select:focus, .field textarea:focus{
+    outline:none; border-color:var(--accent); box-shadow:0 0 0 3px var(--accent-bg);
+  }
+  .field textarea{ min-height:56px; resize:vertical; }
+  .fields-grid{ display:grid; grid-template-columns:1fr 1fr; gap:0 14px; }
+  .fields-grid .full{ grid-column:1 / -1; }
+
+  /* email writer */
+  .field-label{
+    display:block; font-size:10.5px; text-transform:uppercase; letter-spacing:.08em;
+    color:var(--muted); margin-bottom:8px; font-family:var(--font-data);
+  }
+  .radio-group{ display:flex; gap:16px; margin-bottom:16px; }
+  .radio-option{ display:flex; align-items:center; gap:6px; font-size:13.5px; font-weight:500; color:var(--text); cursor:pointer; }
+  .radio-option input{ accent-color:var(--accent); width:15px; height:15px; cursor:pointer; }
+  .bullets-title{ margin-bottom:8px; }
+  .bullet-row{ display:flex; gap:6px; margin-bottom:8px; align-items:flex-start; }
+  .bullet-row textarea{
+    width:100%; padding:8px 9px; border:1px solid var(--border); border-radius:var(--radius-sm);
+    font-family:var(--font-body); font-size:13px; background:var(--surface-alt); color:var(--text);
+    resize:none; overflow:hidden; min-height:38px; line-height:1.4;
+  }
+  .bullet-row textarea:focus{ outline:none; border-color:var(--accent); box-shadow:0 0 0 3px var(--accent-bg); }
+  .icon-btn{
+    flex:none; width:34px; height:38px; border:1px solid var(--border); border-radius:var(--radius-sm);
+    background:none; color:var(--muted); cursor:pointer; font-size:15px;
+    display:flex; align-items:center; justify-content:center;
+    transition:background-color .15s ease, color .15s ease;
+  }
+  .icon-btn:hover{ background:var(--stamp-bg); color:var(--stamp); }
+  .add-finding-btn{
+    width:100%; padding:9px; border:1px dashed var(--border); border-radius:var(--radius-sm);
+    background:none; color:var(--accent); cursor:pointer; font-family:var(--font-body);
+    font-size:13px; font-weight:600;
+  }
+  .add-finding-btn:hover{ background:var(--surface-alt); }
+  .subject-readout{
+    background:var(--surface-alt); border:1px solid var(--border); padding:9px 10px;
+    border-radius:var(--radius-sm); font-size:13px; font-family:var(--font-data); color:var(--text);
+  }
+  #emailOutput{
+    width:100%; min-height:320px; padding:14px; border:1px solid var(--border); border-radius:var(--radius-sm);
+    font-size:13.5px; line-height:1.6; font-family:var(--font-body); resize:vertical;
+    color:var(--text); background:var(--surface-alt);
+  }
+  #emailOutput:focus{ outline:none; border-color:var(--accent); box-shadow:0 0 0 3px var(--accent-bg); }
+
+  .empty-state{ color:var(--muted); font-size:13px; padding:30px 6px; text-align:center; }
+  .empty-state .mark{
+    display:block; width:44px; height:44px; margin:0 auto 10px;
+    border-radius:var(--radius-sm); object-fit:cover; opacity:.32;
+  }
+
+  /* case log table */
+  .log-wrap{ overflow-x:auto; }
+  table{ width:100%; border-collapse:collapse; font-family:var(--font-data); font-size:12px; }
+  th, td{ text-align:left; padding:9px 10px; border-bottom:1px solid var(--border); white-space:nowrap; }
+  th{ color:var(--muted); text-transform:uppercase; font-size:10.5px; letter-spacing:.06em; }
+  tr:hover td{ background:var(--surface-alt); }
+  .row-edit{ color:var(--accent); background:none; border:none; cursor:pointer; font-family:var(--font-data); margin-right:10px; }
+  .row-del{ color:var(--stamp); background:none; border:none; cursor:pointer; font-family:var(--font-data); }
+
+  .stamped{ position:relative; }
+  .stamped::after{
+    content:"EXTRACTED"; position:absolute; top:10px; right:14px;
+    font-family:var(--font-data); font-size:11px; letter-spacing:.12em;
+    color:var(--ok); border:2px solid var(--ok); padding:2px 8px; border-radius:2px;
+    transform:rotate(-6deg); opacity:0; animation:stamp .35s ease-out forwards;
+  }
+  @keyframes stamp{
+    0%{ opacity:0; transform:rotate(-6deg) scale(1.7); }
+    60%{ opacity:1; }
+    100%{ opacity:1; transform:rotate(-6deg) scale(1); }
+  }
+  @media (prefers-reduced-motion: reduce){
+    .stamped::after{ animation:none; opacity:1; }
+    *{ transition-duration:.001ms !important; }
+  }
+
+  footer{ text-align:center; color:var(--muted); font-size:11.5px; padding:20px; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-inner">
+    <div class="header-left">
+      <div class="menu-wrap">
+        <button type="button" class="menu-toggle" id="menuToggle" aria-label="Open apps menu" aria-haspopup="true" aria-expanded="false" title="Apps">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="3" y1="6" x2="21" y2="6"></line>
+            <line x1="3" y1="12" x2="21" y2="12"></line>
+            <line x1="3" y1="18" x2="21" y2="18"></line>
+          </svg>
+        </button>
+        <div class="app-menu" id="appMenu" hidden role="menu">
+          <button type="button" data-view="intake" role="menuitem">
+            Case intake
+            <span>Upload documents, extract, checklist</span>
+          </button>
+          <button type="button" data-view="email" role="menuitem">
+            Email writer
+            <span>Draft a revision request from the case</span>
+          </button>
+          <button type="button" data-view="options" role="menuitem">
+            Options
+            <span>Theme, extraction engine, API key</span>
+          </button>
+        </div>
+      </div>
+      <img src="icons/logo.png" alt="Case Register logo" class="brand-logo">
+      <div>
+        <div class="eyebrow" id="viewEyebrow">Case Register · Document Extraction</div>
+        <h1 id="viewTitle">Employment case intake</h1>
+        <p id="viewSubtitle">Upload supporting documents for a case (passport, employer letter, appointment or flight confirmation). The register reads them and drafts the case record below for you to check before export.</p>
+      </div>
+    </div>
+    <button type="button" class="theme-toggle" id="themeToggle" aria-label="Toggle dark mode" title="Toggle dark mode">
+      <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="12" cy="12" r="4"></circle>
+        <line x1="12" y1="2" x2="12" y2="4"></line>
+        <line x1="12" y1="20" x2="12" y2="22"></line>
+        <line x1="4.93" y1="4.93" x2="6.34" y2="6.34"></line>
+        <line x1="17.66" y1="17.66" x2="19.07" y2="19.07"></line>
+        <line x1="2" y1="12" x2="4" y2="12"></line>
+        <line x1="20" y1="12" x2="22" y2="12"></line>
+        <line x1="4.93" y1="19.07" x2="6.34" y2="17.66"></line>
+        <line x1="17.66" y1="6.34" x2="19.07" y2="4.93"></line>
+      </svg>
+      <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+      </svg>
+    </button>
+  </div>
+</header>
+
+<main>
+<div id="view-intake" class="view">
+  <div class="grid">
+
+    <!-- LEFT: intake -->
+    <section class="panel">
+      <div class="panel-head">
+        <h2>Documents in</h2>
+        <div style="display:flex; gap:8px; align-items:center;">
+          <span class="tag" id="engineTag">Home server</span>
+          <span class="tag" id="fileCount">0 files</span>
+        </div>
+      </div>
+      <div class="panel-body">
+        <div class="drop" id="drop">
+          <strong>Drop files here</strong> or click to browse<br>
+          <span style="font-size:11.5px;">PDF, JPG, PNG — passport pages, letters, confirmations</span>
+          <input type="file" id="fileInput" multiple accept=".pdf,.jpg,.jpeg,.png">
+        </div>
+        <ul id="fileList"></ul>
+        <button type="button" class="link-btn" id="openOptionsBtn">Configure extraction engine &amp; API key →</button>
+
+        <div class="actions">
+          <button class="btn stamp" id="extractBtn" disabled>Extract case data</button>
+          <button class="btn secondary" id="clearBtn">Clear files</button>
+        </div>
+        <div class="status" id="status"></div>
+      </div>
+    </section>
+
+    <!-- RIGHT: extracted record -->
+    <section class="panel">
+      <div class="panel-head">
+        <h2>Draft case record</h2>
+        <span class="tag" id="recordTag">Unverified</span>
+      </div>
+      <div class="panel-body" id="recordBody">
+        <div class="empty-state">
+          <img class="mark" src="icons/logo.png" alt="">
+          Extracted fields will appear here for review once documents are processed.
+        </div>
+      </div>
+    </section>
+
+  </div>
+
+  <!-- CHECKLIST COMPLIANCE -->
+  <section class="panel" style="margin-top:24px;">
+    <div class="panel-head">
+      <h2>Checklist compliance</h2>
+      <span class="tag" id="checklistTag">Not checked</span>
+    </div>
+    <div class="panel-body" id="checklistBody">
+      <div class="empty-state">
+        <img class="mark" src="icons/logo.png" alt="">
+        Compliance against the Employment Visa document checklist will appear here after extraction.
+      </div>
+    </div>
+  </section>
+
+  <!-- CASE LOG -->
+  <section class="panel" style="margin-top:24px;">
+    <div class="panel-head">
+      <h2>Case log</h2>
+      <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
+        <span class="tag" id="logCount">0 cases</span>
+        <button class="btn secondary" id="exportBtn" style="padding:7px 14px; font-size:12.5px;">Export CSV</button>
+        <button class="btn secondary" id="exportJsonBtn" style="padding:7px 14px; font-size:12.5px;">Export JSON backup</button>
+        <button class="btn secondary" id="importJsonBtn" style="padding:7px 14px; font-size:12.5px;">Import JSON backup</button>
+        <input type="file" id="importJsonInput" accept="application/json,.json" style="display:none;">
+      </div>
+    </div>
+    <div class="status" id="logStatus" style="padding:0 18px; margin-top:-4px;"></div>
+    <div class="panel-body log-wrap">
+      <table id="logTable">
+        <thead>
+          <tr>
+            <th>Name</th><th>Surname</th><th>Gender</th><th>Passport #</th>
+            <th>Appt.</th><th>AIP</th><th>Flight</th><th>Employer</th>
+            <th>Job title</th><th>Result</th><th>Checklist</th><th></th>
+          </tr>
+        </thead>
+        <tbody id="logBody">
+          <tr><td colspan="12" style="color:var(--muted); text-align:center;">No cases logged yet.</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+</div>
+
+<div id="view-email" class="view" hidden>
+  <div class="grid">
+
+    <!-- LEFT: applicant + findings -->
+    <section class="panel">
+      <div class="panel-head">
+        <h2>Applicant &amp; findings</h2>
+        <span class="tag" id="emailCaseTag">No case loaded</span>
+      </div>
+      <div class="panel-body">
+        <div class="actions" style="margin-top:0;">
+          <button class="btn secondary" id="emailLoadCaseBtn" type="button">Load from current case</button>
+          <button class="btn secondary" id="emailGenerateFindingsBtn" type="button">Generate findings with AI</button>
+        </div>
+        <div class="status" id="emailStatus"></div>
+
+        <div class="field" style="margin-top:16px;">
+          <label for="emailApplicantName">Applicant name</label>
+          <input type="text" id="emailApplicantName" placeholder="e.g. John Michael Doe">
+        </div>
+        <div class="field">
+          <label for="emailPassportNumber">Passport number</label>
+          <input type="text" id="emailPassportNumber" placeholder="e.g. P1234567">
+        </div>
+        <div class="field">
+          <label for="emailSalutation">Salutation / title</label>
+          <input type="text" id="emailSalutation" placeholder="e.g. Mr.">
+        </div>
+
+        <div class="field">
+          <span class="field-label">Application type</span>
+          <div class="radio-group">
+            <label class="radio-option"><input type="radio" name="emailAppType" value="sport"> Sport</label>
+            <label class="radio-option"><input type="radio" name="emailAppType" value="student"> Student</label>
+            <label class="radio-option"><input type="radio" name="emailAppType" value="employment" checked> Employment</label>
+          </div>
+        </div>
+
+        <div class="bullets-title">
+          <span class="field-label" style="margin-bottom:0;">Findings</span>
+        </div>
+        <div id="emailBulletsContainer"></div>
+        <button class="add-finding-btn" id="emailAddBulletBtn" type="button">+ Add finding</button>
+      </div>
+    </section>
+
+    <!-- RIGHT: output -->
+    <section class="panel">
+      <div class="panel-head">
+        <h2>Email draft</h2>
+      </div>
+      <div class="panel-body">
+        <div class="field">
+          <label>Subject line</label>
+          <div class="subject-readout" id="emailSubjectReadout">Subject will appear here</div>
+        </div>
+        <div class="actions" style="margin-top:8px;">
+          <button class="btn secondary" id="emailCopySubjectBtn" type="button">Copy subject</button>
+        </div>
+
+        <div class="field" style="margin-top:18px;">
+          <label for="emailOutput">Email body</label>
+          <textarea id="emailOutput" class="email-output" readonly></textarea>
+        </div>
+        <div class="actions">
+          <button class="btn stamp" id="emailCopyBodyBtn" type="button">Copy body</button>
+        </div>
+      </div>
+    </section>
+
+  </div>
+</div>
+
+<div id="view-options" class="view" hidden>
+  <div class="grid">
+
+    <!-- LEFT: appearance -->
+    <section class="panel">
+      <div class="panel-head">
+        <h2>Appearance</h2>
+      </div>
+      <div class="panel-body">
+        <div class="keyrow" style="margin-top:0;">
+          <label>Theme</label>
+          <div class="radio-group">
+            <label class="radio-option"><input type="radio" name="themeOption" value="light"> Light</label>
+            <label class="radio-option"><input type="radio" name="themeOption" value="dark"> Dark</label>
+          </div>
+          <small>Also togglable anytime from the icon in the header.</small>
+        </div>
+
+        <div class="keyrow">
+          <label>Accent color</label>
+          <div class="accent-picker">
+            <button type="button" class="accent-picker-btn" id="accentPickerBtn" aria-haspopup="true" aria-expanded="false">
+              <span class="swatch" id="accentSwatchCurrent"></span>
+              <span id="accentNameCurrent">Stamp Red</span>
+              <svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="6 9 12 15 18 9"></polyline>
+              </svg>
+            </button>
+            <div class="accent-menu" id="accentMenu" hidden role="menu"></div>
+          </div>
+          <small>Colors the primary buttons, links, and focus rings — error/compliance colors in the checklist stay fixed either way.</small>
+        </div>
+      </div>
+    </section>
+
+    <!-- RIGHT: extraction engine -->
+    <section class="panel">
+      <div class="panel-head">
+        <h2>Extraction engine</h2>
+      </div>
+      <div class="panel-body">
+        <div class="keyrow" style="margin-top:0;">
+          <label for="engineMode">Active engine</label>
+          <select id="engineMode">
+            <option value="home">Home server (local model)</option>
+            <option value="gemini">Gemini (cloud fallback)</option>
+          </select>
+          <small>Whichever is selected here is used for extraction and for the Email Writer's "Generate findings with AI". Both credentials below are always editable — fill in whichever engine(s) you use.</small>
+        </div>
+
+        <div class="keyrow" id="homeServerRow">
+          <label style="display:flex; align-items:center; justify-content:space-between; margin-bottom:0;">
+            <span>Home server URL</span>
+            <span class="tag ok" id="homeActiveTag">Active</span>
+          </label>
+          <input type="text" id="homeUrl" placeholder="https://case-tool.yourdomain.com" style="margin-top:5px;">
+          <label for="homeToken" style="margin-top:8px;">Home server token</label>
+          <input type="password" id="homeToken" placeholder="paste the API_TOKEN from your .env">
+          <small>
+            Stored only in this browser (localStorage). Documents go straight to your own server over HTTPS — nothing reaches a third-party AI provider. Also used by the Email Writer's "Generate findings with AI" action (via a <code>/findings</code> endpoint on the same server).
+          </small>
+        </div>
+
+        <div class="keyrow" id="geminiRow">
+          <label style="display:flex; align-items:center; justify-content:space-between; margin-bottom:0;">
+            <span>Gemini API key</span>
+            <span class="tag ok" id="geminiActiveTag">Active</span>
+          </label>
+          <input type="password" id="apiKey" placeholder="AIza..." style="margin-top:5px;">
+          <small>
+            Stored only in this browser (localStorage), never committed to the repo or sent anywhere but generativelanguage.googleapis.com.
+            Because this page runs entirely client-side, anyone who can view this browser's storage can see the key — don't use this on a shared machine, and rotate the key if that's a concern.
+            Note: on Google's free tier, document content sent for extraction may be used to improve Google's products — worth knowing given these are case documents. Also used by the Email Writer's "Generate findings with AI" action.
+          </small>
+        </div>
+      </div>
+    </section>
+
+  </div>
+</div>
+</main>
+
+<footer>Local, single-user tool. Documents go either to your own home server or directly to the Gemini API, depending on the extraction engine selected above — nothing else ever sees them.</footer>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
