@@ -1,0 +1,19 @@
+[
+  { "key": "name", "label": "Name", "type": "text" },
+  { "key": "surname", "label": "Surname", "type": "text" },
+  { "key": "gender", "label": "Gender", "type": "select", "options": ["", "Male", "Female"] },
+  { "key": "passport_number", "label": "Passport number", "type": "text" },
+  { "key": "date_appointment", "label": "Date appointment", "type": "text" },
+  { "key": "aip_date", "label": "AIP Date", "type": "text" },
+  { "key": "flight_date", "label": "Flight Date", "type": "text" },
+  { "key": "accommodation", "label": "Accommodation", "type": "text" },
+  { "key": "insurance", "label": "Insurance (start date)", "type": "text" },
+  { "key": "insurance_expiry", "label": "Insurance Expiry", "type": "text" },
+  { "key": "skills_pass", "label": "Skills pass", "type": "select", "options": ["", "Yes", "No", "Not required"] },
+  { "key": "pre_departure", "label": "Pre-Departure course", "type": "select", "options": ["", "Yes", "No", "Not required"] },
+  { "key": "job_title", "label": "Job title", "type": "text" },
+  { "key": "employer", "label": "Employer", "type": "text" },
+  { "key": "result", "label": "result", "type": "select", "options": ["", "passed", "email sent", "email received", "refused", "sent to interview"] },
+  { "key": "comments", "label": "Comments", "type": "textarea", "full": true },
+  { "key": "uncertain", "label": "Uncertain about", "type": "textarea", "full": true }
+]

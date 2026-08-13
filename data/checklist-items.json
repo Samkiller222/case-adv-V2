@@ -1,0 +1,52 @@
+[
+  {
+    "id": "visa_form",
+    "label": "Visa Application Form",
+    "criteria": "Fully filled and signed by the applicant."
+  },
+  {
+    "id": "passport",
+    "label": "Passport",
+    "criteria": "Minimum validity of 8 months from the date of the visa application."
+  },
+  {
+    "id": "passport_photo",
+    "label": "Passport photo",
+    "criteria": "Meets ICAO standards (recent, plain light background, neutral expression, correct size/head proportions)."
+  },
+  {
+    "id": "aip_letter",
+    "label": "Approval in Principle (AIP) letter",
+    "criteria": "Present, and the visa is being applied for within 60 days of the AIP letter's issuance date."
+  },
+  {
+    "id": "vfs_appointment",
+    "label": "VFS Appointment Letter",
+    "criteria": "Present."
+  },
+  {
+    "id": "flight_tickets",
+    "label": "Prospective flight tickets",
+    "criteria": "Full itinerary provided, clearly showing the applicant's name, flight date, and all stops — preferably transiting outside the Schengen area."
+  },
+  {
+    "id": "insurance",
+    "label": "Medical & travel insurance",
+    "criteria": "Valid for the Schengen area; minimum €30,000 medical coverage; minimum 180 consecutive days, valid at least from the point of submission of the visa application; shows name, surname, and passport number; coverage is not restricted or linked to the applicant's place of residence and does not restrict the applicant to departing only from the country where the policy was issued. If the certificate doesn't show all of this, a table of benefits is required to confirm it."
+  },
+  {
+    "id": "accommodation",
+    "label": "Proof of prospective accommodation",
+    "criteria": "Matches the applicable accommodation type: (a) employer-provided free accommodation — notarised/lawyer-signed declaration by the host, a copy of the host's ID card, and (if a secondary address) proof of the host's link to that residence; OR (b) rented accommodation — a registered lease agreement signed by both parties stating duration, home address, applicant's name, and rent; OR (c) hotel/short-term/vacation rental — a booking for a minimum of 14 consecutive nights from the date of prospective arrival in Malta."
+  },
+  {
+    "id": "skills_pass",
+    "label": "Skills Pass (if applicable)",
+    "criteria": "Required only for applicants working directly or indirectly in the tourism and hospitality sector — Skills Pass Part 1 and Part 2 completion certificates issued by the Institute of Tourism Studies. Not applicable outside that sector."
+  },
+  {
+    "id": "fees",
+    "label": "Visa application fee",
+    "criteria": "€150 standard / €250 extended. This is a payment made by credit/visa card, not a document — always mark this item \"Not applicable\" since it cannot be verified from uploaded documents."
+  }
+]

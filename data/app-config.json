@@ -1,0 +1,4 @@
+{
+  "geminiModel": "gemini-3.6-flash",
+  "checklistStatuses": ["Compliant", "Non-compliant", "Missing", "Not applicable"]
+}

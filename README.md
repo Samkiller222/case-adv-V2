@@ -8,7 +8,8 @@ Fields extracted: Name, Surname, Gender, Passport number, Date appointment, AIP 
 Flight Date, Accommodation, Insurance, Insurance Expiry, Skills pass, Job title,
 Employer, result, Comments.
 
-No backend required. It's a static page (`index.html` + `app.js`) that:
+No backend required. It's a static page (`index.html`, the ES modules under
+`js/`, and the config data under `data/`) that:
 - keeps whatever documents you've attached (`IndexedDB`, not
   `localStorage` — file contents are too big for that) so an accidental
   refresh before you hit "Extract" doesn't lose them; removing a file,
@@ -63,8 +64,9 @@ show an install icon in the address bar, mobile shows "Add to Home Screen".
 Installed or not, it also caches pdf.js (the CDN library used for PDF text
 extraction) the first time you load the page online, so a flaky or blocked
 CDN — the failure mode that used to be able to take down the whole page,
-see `extractPdfText()` in `app.js` — stops mattering after that first
-visit. The app shell (`index.html`, `app.js`) is cached network-first, so
+see `extractPdfText()` in `js/pdf-extract.js` — stops mattering after that
+first visit. The app shell (`index.html`, the `js/` modules, the `data/`
+JSON config) is cached network-first, so
 you always get the latest version when online and only fall back to the
 cached copy when offline; extraction calls themselves (POST requests to
 Gemini or your home server) are never intercepted or cached, only actual
@@ -119,7 +121,7 @@ page changes:
   to `<your-url>/extract` with `Authorization: Bearer <your-token>`, and
   expects back a JSON body shaped like the extracted record (the same keys
   as the Gemini path, plus an optional `checklist` array — see
-  `app.js`/`normalizeChecklist` for the exact shape). For the Email Writer's
+  `js/checklist.js`/`normalizeChecklist` for the exact shape). For the Email Writer's
   "Generate findings with AI", it `POST`s JSON to `<your-url>/findings`
   (same bearer-token auth) with body
   `{ "applicant": { "name", "passport_number" }, "issues": [{ "id", "label", "status", "note" }, ...] }`
@@ -157,7 +159,20 @@ Passport numbers and personal case data are sensitive — treat the case log
 
 ## Running it locally
 
-Just open `index.html` in a browser. No build step, no install.
+The app's config (field lists, checklist criteria, etc.) lives in `data/*.json`
+and is loaded with `fetch()` at startup, so the page needs to be served over
+http(s) — most browsers block `fetch()` of local files when you open
+`index.html` directly (`file://`). No build step either way, just a static
+file server. From this folder:
+
+```bash
+python3 -m http.server 8000
+# then open http://localhost:8000/
+```
+
+Any other static server (`npx serve`, VS Code's Live Server, etc.) works
+too. Hosting it on GitHub Pages (below) serves it over https and needs no
+extra setup.
 
 ## Hosting it on GitHub Pages
 
@@ -185,6 +200,36 @@ git push -u origin main
 
 That's it — this only touches the new repo you just created; it never reads
 from or writes to any other repository.
+
+## Code layout
+
+- `index.html` — markup, styles, and the pre-first-paint theme script.
+- `data/*.json` — static config data, editable without touching any logic:
+  - `fields.json` — the extracted-record form fields.
+  - `checklist-items.json` — the CVU Employment Visa checklist items and criteria.
+  - `accent-presets.json` — theme accent-color options.
+  - `view-meta.json` — per-view header text (intake/email/options).
+  - `checklist-links.json` — CVU checklist PDF links, by application type.
+  - `app-config.json` — the Gemini model id and checklist status list.
+- `js/*.js` — ES modules, one per piece of functionality:
+  - `config.js` — fetches and exports everything in `data/`.
+  - `main.js` — entry point; wires up every other module in order.
+  - `state.js` — the shared app state (draft record, files, case log).
+  - `utils.js` — small shared helpers (DOM lookup, escaping, status-line setter).
+  - `pwa.js` — service worker registration.
+  - `theme.js` — light/dark theme + accent color picker.
+  - `engine-settings.js` — extraction engine (home server / Gemini) settings.
+  - `menu.js` — the apps menu and intake/email/options view switching.
+  - `files-db.js` — IndexedDB persistence for in-progress attachments.
+  - `file-intake.js` — drag/drop file intake and the file list.
+  - `pdf-extract.js` — PDF text extraction via pdf.js.
+  - `checklist.js` — checklist normalization and the compliance panel.
+  - `extraction.js` — runs extraction against the selected engine.
+  - `record.js` — the draft record form, and saving/loading it to the case log.
+  - `case-log.js` — the case log table, CSV export, JSON backup/restore.
+  - `email-writer.js` — the revision-request email drafting tool.
+- `sw.js` — the service worker (offline caching); bump `CACHE_VERSION` here
+  when you change any file listed in its `SHELL_ASSETS`.
 
 ## Known limitations (v1)
 

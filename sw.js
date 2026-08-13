@@ -3,28 +3,50 @@
  * Two jobs:
  * 1. Cache pdf.js (the CDN script + its worker) so PDF text extraction keeps
  *    working even if that CDN is blocked or flaky — the exact failure mode
- *    that used to take down the whole page (see app.js's lazy pdfjsLib
- *    setup). Cache-first: these are a pinned, versioned URL that won't
- *    change under us.
- * 2. Cache the app shell (index.html, app.js, manifest) so the page still
- *    loads offline. Network-first: always prefer a fresh copy when online,
- *    only falling back to the cached one when the network fails — so a
- *    code update is picked up on the very next online load instead of
- *    users getting stuck on a stale cached version.
+ *    that used to take down the whole page (see js/pdf-extract.js's lazy
+ *    pdfjsLib setup). Cache-first: these are a pinned, versioned URL that
+ *    won't change under us.
+ * 2. Cache the app shell (index.html, the js/ modules, the data/ JSON
+ *    config, manifest) so the page still loads offline. Network-first:
+ *    always prefer a fresh copy when online, only falling back to the
+ *    cached one when the network fails — so a code update is picked up on
+ *    the very next online load instead of users getting stuck on a stale
+ *    cached version.
  *
- * Bump CACHE_VERSION whenever app.js/index.html change in a way that must
- * reach already-installed users promptly — it forces the old cache to be
- * dropped on activate.
+ * Bump CACHE_VERSION whenever anything in SHELL_ASSETS changes in a way
+ * that must reach already-installed users promptly — it forces the old
+ * cache to be dropped on activate.
  */
-const CACHE_VERSION = "v2";
+const CACHE_VERSION = "v3";
 const SHELL_CACHE = `case-register-shell-${CACHE_VERSION}`;
 const CDN_CACHE = `case-register-cdn-${CACHE_VERSION}`;
 
 const SHELL_ASSETS = [
   "./",
   "./index.html",
-  "./app.js",
   "./manifest.webmanifest",
+  "./js/main.js",
+  "./js/config.js",
+  "./js/utils.js",
+  "./js/state.js",
+  "./js/pwa.js",
+  "./js/theme.js",
+  "./js/engine-settings.js",
+  "./js/menu.js",
+  "./js/files-db.js",
+  "./js/file-intake.js",
+  "./js/pdf-extract.js",
+  "./js/checklist.js",
+  "./js/extraction.js",
+  "./js/record.js",
+  "./js/case-log.js",
+  "./js/email-writer.js",
+  "./data/fields.json",
+  "./data/checklist-items.json",
+  "./data/accent-presets.json",
+  "./data/view-meta.json",
+  "./data/checklist-links.json",
+  "./data/app-config.json",
 ];
 const CDN_ASSETS = [
   "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js",

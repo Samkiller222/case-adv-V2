@@ -1,0 +1,32 @@
+[
+  {
+    "id": "red",
+    "name": "Stamp Red",
+    "light": { "accent": "#B23A2F", "accentDark": "#8C2C22", "accentBg": "#FBF1EF" },
+    "dark": { "accent": "#E2685C", "accentDark": "#B23A2F", "accentBg": "rgba(226,104,92,.12)" }
+  },
+  {
+    "id": "navy",
+    "name": "Navy Blue",
+    "light": { "accent": "#2A4E8C", "accentDark": "#1E3A6B", "accentBg": "#EAF0FA" },
+    "dark": { "accent": "#6E9EEB", "accentDark": "#3B5FA3", "accentBg": "rgba(110,158,235,.12)" }
+  },
+  {
+    "id": "plum",
+    "name": "Plum",
+    "light": { "accent": "#7A3B6B", "accentDark": "#5C2B50", "accentBg": "#F6EDF3" },
+    "dark": { "accent": "#C97FB5", "accentDark": "#8C4F79", "accentBg": "rgba(201,127,181,.12)" }
+  },
+  {
+    "id": "teal",
+    "name": "Teal",
+    "light": { "accent": "#1F7A72", "accentDark": "#155A54", "accentBg": "#E9F5F3" },
+    "dark": { "accent": "#5FC4B8", "accentDark": "#2F8C82", "accentBg": "rgba(95,196,184,.12)" }
+  },
+  {
+    "id": "charcoal",
+    "name": "Charcoal",
+    "light": { "accent": "#3A4652", "accentDark": "#252E38", "accentBg": "#EEF0F2" },
+    "dark": { "accent": "#9FB0BD", "accentDark": "#5C6B78", "accentBg": "rgba(159,176,189,.12)" }
+  }
+]

@@ -1,0 +1,170 @@
+/* Runs document extraction against whichever engine is selected in
+ * Options (home server or Gemini), and renders the result into the draft
+ * record panel on success.
+ */
+import { el, fileToBase64, makeStatusSetter } from "./utils.js";
+import { state } from "./state.js";
+import { FIELDS, CHECKLIST_ITEMS, GEMINI_MODEL } from "./config.js";
+import { getEngineMode, getApiKey, getHomeUrl, getHomeToken } from "./engine-settings.js";
+import { extractPdfText } from "./pdf-extract.js";
+import { normalizeChecklist } from "./checklist.js";
+import { renderRecord } from "./record.js";
+
+const extractBtn = el("extractBtn");
+const setStatus = makeStatusSetter("status");
+
+async function runExtraction() {
+  if (getEngineMode() === "home") {
+    return runExtractionViaHomeServer();
+  }
+  return runExtractionViaGemini();
+}
+
+async function runExtractionViaHomeServer() {
+  const url = getHomeUrl();
+  const token = getHomeToken();
+  if (!url) {
+    setStatus("Enter your home server URL first.", true);
+    return;
+  }
+  if (!token) {
+    setStatus("Enter your home server token first.", true);
+    return;
+  }
+  extractBtn.disabled = true;
+  setStatus("Sending documents to home server…");
+
+  try {
+    const formData = new FormData();
+    state.files.forEach(({ file }) => formData.append("files", file, file.name));
+
+    const resp = await fetch(`${url.replace(/\/$/, "")}/extract`, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${token}` },
+      body: formData,
+    });
+
+    if (!resp.ok) {
+      const errBody = await resp.json().catch(() => ({}));
+      throw new Error(errBody.error || `Home server error ${resp.status}`);
+    }
+
+    const parsed = await resp.json();
+    parsed.checklist = normalizeChecklist(parsed.checklist);
+    state.record = parsed;
+    renderRecord(true);
+    setStatus(`Extracted from ${state.files.length} document${state.files.length === 1 ? "" : "s"} (home server). Review before saving.`);
+  } catch (err) {
+    console.error(err);
+    const msg = /Failed to fetch|NetworkError/i.test(err.message || "")
+      ? "Can't reach the home server — check it's on and connected, or switch to Gemini fallback above."
+      : (err.message || "Extraction failed.");
+    setStatus(msg, true);
+  } finally {
+    extractBtn.disabled = state.files.length === 0;
+  }
+}
+
+function buildExtractionInstruction() {
+  const fieldKeys = FIELDS.map(f => f.key).join(", ");
+  return `You are helping a visa case officer draft a case record from supporting documents.
+Read all the documents provided (text and/or images — passport pages, employer letters, appointment or flight confirmations, insurance certificates, etc.).
+Extract only what these documents actually state. Return ONLY a JSON object, no markdown fences, no commentary, with exactly these keys:
+${fieldKeys}.
+- gender must be "Male", "Female", or "" if unclear.
+- skills_pass and pre_departure are TWO SEPARATE things that are easy to confuse — read carefully:
+  - skills_pass = "Yes" if you see any "Skills Pass" branded certificate — the interlocking diamond/arrow Skills Pass logo and/or "Skills Pass" wording in the title (e.g. "Certificate of Skills Pass Achievement"). This can be issued by different bodies with different layouts (e.g. "Skills Pass Malta" with an ISSUE DATE/RECIPIENT/ISSUER layout, or "Institute of Tourism Studies - Malta" with a Full Name/Candidate Number/Job Family/Level layout, or others) — issuer and layout vary, the Skills Pass branding is the constant. Note: its batch or course name may itself contain the word "predeparture" (e.g. "Phase 2 predeparture batch 11") — that is just naming a training session/batch, it does NOT mean this document belongs to pre_departure. If the document has Skills Pass branding, set skills_pass, not pre_departure, regardless of that wording.
+  - pre_departure = "Yes" only if you see a "PRE-DEPARTURE COURSE — Certificate of Achievement" issued by the Government of Malta (Ministry for Home Affairs, Security and Employment), listing specific course topics (e.g. language, hygiene, culture, transport). If you see this document type, set pre_departure, not skills_pass.
+  - Each is "No" or "Not required" only if stated as such in a document; "" if neither document type is present at all.
+- result must be one of "passed", "email sent", "email received", "refused", "sent to interview", or "" if not stated.
+- insurance is the insurance policy START DATE (matches the format of a date field in the source form) — do NOT put the insurance company/provider name here, only a date.
+- insurance_expiry is the insurance policy EXPIRY date, same rule.
+- Dates: use whatever format appears in the source document; do not invent a date that isn't present.
+- If a field is not present in any document, return an empty string for it — never guess or fabricate.
+- comments: a short note on anything relevant you noticed (e.g. discrepancies, missing documents) — not a restatement of the other fields.
+- uncertain: separate from comments. List each field you were NOT confident about and why — e.g. handwriting was hard to read, two documents gave conflicting dates, a value was inferred rather than directly stated. Leave this empty ("") only if you're confident in every field you filled in.
+
+Additionally, check the uploaded documents against Malta's Central Visa Unit "Documentation Required for Employment Visa" checklist below. Return a "checklist" array in the JSON with exactly one entry per item, in this order, each an object with keys "id", "status", "note":
+${CHECKLIST_ITEMS.map((c, i) => `${i + 1}. id="${c.id}" — ${c.label}: ${c.criteria}`).join("\n")}
+
+For each item, set "status" to exactly one of:
+- "Compliant": a document satisfying this item is present and meets the stated criteria.
+- "Non-compliant": a relevant document is present but fails to meet the stated criteria — say specifically why in "note" (e.g. which figure, date, or detail falls short).
+- "Missing": no document addressing this item was provided at all.
+- "Not applicable": the item doesn't apply to this case (e.g. skills_pass when the applicant isn't in tourism/hospitality; the fees item, which is always "Not applicable" since it's a payment, not a document).
+"note" should be one short sentence citing the specific shortfall for "Non-compliant", or a brief reason for "Missing"/"Not applicable". Leave it empty ("") for "Compliant" unless there's a minor caveat worth flagging. Base every verdict only on what the documents actually show — never assume compliance for a document that wasn't provided.`;
+}
+
+async function runExtractionViaGemini() {
+  const key = getApiKey();
+  if (!key) {
+    setStatus("Enter your Gemini API key first.", true);
+    return;
+  }
+  extractBtn.disabled = true;
+  setStatus("Reading documents…");
+
+  try {
+    const parts = [];
+    for (const { file } of state.files) {
+      if (file.type === "application/pdf") {
+        const text = await extractPdfText(file);
+        if (text.trim().length > 40) {
+          parts.push({ text: `--- Document: ${file.name} (PDF text) ---\n${text}` });
+        } else {
+          // no embedded text layer (likely scanned) — send the PDF itself,
+          // Gemini reads PDFs natively including scanned pages
+          const base64 = await fileToBase64(file);
+          parts.push({ text: `--- Document: ${file.name} (scanned PDF) ---` });
+          parts.push({ inline_data: { mime_type: "application/pdf", data: base64 } });
+        }
+      } else if (file.type.startsWith("image/")) {
+        const base64 = await fileToBase64(file);
+        parts.push({ text: `--- Document: ${file.name} (image) ---` });
+        parts.push({ inline_data: { mime_type: file.type, data: base64 } });
+      }
+    }
+
+    setStatus("Extracting fields…");
+
+    const body = {
+      contents: [{ role: "user", parts: [{ text: buildExtractionInstruction() }, ...parts] }],
+      generationConfig: { responseMimeType: "application/json" },
+    };
+
+    const resp = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${encodeURIComponent(key)}`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      }
+    );
+
+    if (!resp.ok) {
+      const errText = await resp.text();
+      throw new Error(`API error ${resp.status}: ${errText.slice(0, 300)}`);
+    }
+
+    const data = await resp.json();
+    const rawText = data?.candidates?.[0]?.content?.parts?.map(p => p.text).filter(Boolean).join("") || "";
+    if (!rawText) throw new Error("No text in response — the model may have blocked the content or returned nothing.");
+
+    const cleaned = rawText.replace(/```json|```/g, "").trim();
+    const parsed = JSON.parse(cleaned);
+    parsed.checklist = normalizeChecklist(parsed.checklist);
+
+    state.record = parsed;
+    renderRecord(true);
+    setStatus(`Extracted from ${state.files.length} document${state.files.length === 1 ? "" : "s"}. Review before saving.`);
+  } catch (err) {
+    console.error(err);
+    setStatus(err.message || "Extraction failed.", true);
+  } finally {
+    extractBtn.disabled = state.files.length === 0;
+  }
+}
+
+export function initExtraction() {
+  extractBtn.addEventListener("click", runExtraction);
+}

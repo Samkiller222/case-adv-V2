@@ -1,0 +1,17 @@
+{
+  "intake": {
+    "eyebrow": "Case Register · Document Extraction",
+    "title": "Employment case intake",
+    "subtitle": "Upload supporting documents for a case (passport, employer letter, appointment or flight confirmation). The register reads them and drafts the case record below for you to check before export."
+  },
+  "email": {
+    "eyebrow": "Case Register · Correspondence",
+    "title": "Email writer",
+    "subtitle": "Draft a document-revision request from the current case's findings, or write one from scratch."
+  },
+  "options": {
+    "eyebrow": "Case Register · Settings",
+    "title": "Options",
+    "subtitle": "Theme, extraction engine, and API key — everything the other views need to run."
+  }
+}
