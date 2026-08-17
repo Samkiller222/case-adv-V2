@@ -13,13 +13,18 @@ import { clearFilesDB } from "./files-db.js";
 // (never at module load time), which ES modules resolve safely.
 import { renderLog } from "./case-log.js";
 import { switchView } from "./menu.js";
+// See criteria.js for the note on this being a deliberate circular import.
+import { getCriteriaId } from "./criteria.js";
 
 const recordBody = el("recordBody");
 const recordTag = el("recordTag");
 const setStatus = makeStatusSetter("status");
 
 export function renderRecord(justExtracted) {
-  renderChecklist(state.record ? state.record.checklist : null);
+  // A record keeps the checklist it was actually extracted against; with
+  // no record yet, preview whichever checklist is currently selected in
+  // the intake dropdown so the panel always names what it's showing.
+  renderChecklist(state.record ? state.record.checklist : null, state.record ? state.record.criteriaId : getCriteriaId());
 
   if (state.record) {
     recordTag.textContent = state.editingCaseId

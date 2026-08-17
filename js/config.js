@@ -20,10 +20,15 @@ async function loadJson(path) {
 // The extracted-record form fields, in display order (data/fields.json).
 export const FIELDS = await loadJson("./data/fields.json");
 
-// Malta CVU "Documentation Required for Employment Visa" checklist items,
-// each with an id, display label, and the compliance criteria text used
-// both on-screen and in the extraction prompt (data/checklist-items.json).
-export const CHECKLIST_ITEMS = await loadJson("./data/checklist-items.json");
+// Every checklist the app can verify documents against — Malta CVU's
+// "Documentation Required for ... Visa" series. Each entry is
+// { id, label, title, version, items }, where items is the same shape as
+// the old single checklist (id, display label, compliance criteria text)
+// used both on-screen and in the extraction prompt (data/checklists.json).
+// Which one applies to a given case is chosen via the intake panel's
+// checklist dropdown (see js/criteria.js) and stored per-record, since a
+// saved case always keeps the checklist it was actually checked against.
+export const CHECKLISTS = await loadJson("./data/checklists.json");
 
 // Accent color presets for the theme picker, each with light/dark variants
 // (data/accent-presets.json).

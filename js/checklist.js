@@ -1,19 +1,37 @@
-/* Checklist compliance: normalizing whatever the extraction engine returns
- * into a fixed shape, and rendering the expandable checklist panel with
- * manual status/reason overrides.
+/* Checklist compliance: resolving which checklist's items apply to a given
+ * record, normalizing whatever the extraction engine returns into a fixed
+ * shape, and rendering the expandable checklist panel with manual
+ * status/reason overrides.
  */
 import { el } from "./utils.js";
-import { CHECKLIST_ITEMS, CHECKLIST_STATUSES } from "./config.js";
+import { CHECKLISTS, CHECKLIST_STATUSES } from "./config.js";
 
 const checklistBody = el("checklistBody");
 const checklistTag = el("checklistTag");
+const checklistCriteriaTag = el("checklistCriteriaTag");
+
+// Every record remembers which checklist it was actually checked against
+// (state.record.criteriaId / a saved case's own criteriaId) rather than
+// always using whatever's currently selected in the intake dropdown — so
+// switching checklists never reinterprets an already-extracted case.
+// Unknown or missing ids (older saved cases predate this feature, and
+// were all checked against the Employment Visa checklist) fall back to
+// the first entry, which is kept as "employment" for that reason.
+export function getChecklist(criteriaId) {
+  return CHECKLISTS.find(c => c.id === criteriaId) || CHECKLISTS[0];
+}
+
+export function getChecklistItems(criteriaId) {
+  return getChecklist(criteriaId).items;
+}
 
 // The engine (home server or Gemini) returns a checklist array shaped
 // however it likes — this pins it to exactly one entry per known item, in
 // a known order, with a valid status, regardless of what came back.
-export function normalizeChecklist(raw) {
+export function normalizeChecklist(raw, criteriaId) {
+  const items = getChecklistItems(criteriaId);
   const byId = new Map((Array.isArray(raw) ? raw : []).map(c => [c && c.id, c]));
-  return CHECKLIST_ITEMS.map(item => {
+  return items.map(item => {
     const found = byId.get(item.id) || {};
     const status = CHECKLIST_STATUSES.includes(found.status) ? found.status : "Missing";
     return { id: item.id, status, note: (found.note || "").toString() };
@@ -24,13 +42,17 @@ function checklistBadgeClass(status) {
   return { Compliant: "ok", "Non-compliant": "err", Missing: "warn", "Not applicable": "muted" }[status] || "muted";
 }
 
-export function renderChecklist(checklist) {
+export function renderChecklist(checklist, criteriaId) {
+  checklistCriteriaTag.textContent = getChecklist(criteriaId).label;
+
   if (!checklist || !checklist.length) {
     checklistTag.textContent = "Not checked";
     checklistTag.className = "tag";
-    checklistBody.innerHTML = `<div class="empty-state"><img class="mark" src="icons/logo.png" alt="">Compliance against the Employment Visa document checklist will appear here after extraction.</div>`;
+    checklistBody.innerHTML = `<div class="empty-state"><img class="mark" src="icons/logo.png" alt="">Compliance against the selected checklist will appear here after extraction.</div>`;
     return;
   }
+
+  const items = getChecklistItems(criteriaId);
 
   function updateChecklistTag() {
     const flagged = checklist.filter(c => c.status === "Non-compliant" || c.status === "Missing").length;
@@ -42,7 +64,7 @@ export function renderChecklist(checklist) {
   const list = document.createElement("div");
   list.className = "checklist-list";
   checklist.forEach(c => {
-    const item = CHECKLIST_ITEMS.find(i => i.id === c.id);
+    const item = items.find(i => i.id === c.id);
 
     const row = document.createElement("div");
     row.className = "checklist-item expandable";

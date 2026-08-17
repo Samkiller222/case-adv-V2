@@ -7,8 +7,8 @@
  */
 import { el, escapeHtml, csvCell, makeStatusSetter } from "./utils.js";
 import { state, persistLog } from "./state.js";
-import { FIELDS, CHECKLIST_ITEMS } from "./config.js";
-import { normalizeChecklist } from "./checklist.js";
+import { FIELDS } from "./config.js";
+import { getChecklistItems, normalizeChecklist } from "./checklist.js";
 // See record.js for the note on this being a deliberate circular import.
 import { editCaseFromLog, renderRecord } from "./record.js";
 
@@ -119,10 +119,11 @@ function initCsvExport() {
     const header = [...keys, "checklist_issues"].join(",");
     const rows = state.log.map(rec => {
       const base = keys.map(k => csvCell(rec[k] || "")).join(",");
+      const items = getChecklistItems(rec.criteriaId);
       const issues = (rec.checklist || [])
         .filter(c => c.status === "Non-compliant" || c.status === "Missing")
         .map(c => {
-          const item = CHECKLIST_ITEMS.find(i => i.id === c.id);
+          const item = items.find(i => i.id === c.id);
           const label = item ? item.label : c.id;
           return c.note ? `${label}: ${c.note}` : `${label} (${c.status})`;
         })
@@ -178,7 +179,11 @@ function initJsonBackup() {
           if (!entry || typeof entry !== "object") { skipped++; return; }
           const withId = entry.id ? entry : { ...entry, id: crypto.randomUUID() };
           if (existingIds.has(withId.id)) { skipped++; return; }
-          withId.checklist = normalizeChecklist(withId.checklist);
+          // Older backups predate multi-checklist support and have no
+          // criteriaId — normalizeChecklist falls back to the Employment
+          // Visa checklist for those, matching what they were actually
+          // checked against at the time.
+          withId.checklist = normalizeChecklist(withId.checklist, withId.criteriaId);
           state.log.push(withId);
           existingIds.add(withId.id);
           added++;

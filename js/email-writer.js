@@ -8,8 +8,9 @@
  */
 import { el, makeStatusSetter } from "./utils.js";
 import { state } from "./state.js";
-import { CHECKLIST_ITEMS, CHECKLIST_LINKS, GEMINI_MODEL } from "./config.js";
+import { CHECKLIST_LINKS, GEMINI_MODEL } from "./config.js";
 import { getEngineMode, getApiKey, getHomeUrl, getHomeToken } from "./engine-settings.js";
+import { getChecklistItems } from "./checklist.js";
 
 const emailApplicantName = el("emailApplicantName");
 const emailPassportNumber = el("emailPassportNumber");
@@ -126,8 +127,8 @@ function flashCopied(btn) {
   setTimeout(() => { btn.textContent = original; btn.classList.remove("ok-flash"); }, 1200);
 }
 
-function describeChecklistFinding(entry) {
-  const item = CHECKLIST_ITEMS.find(i => i.id === entry.id);
+function describeChecklistFinding(entry, criteriaId) {
+  const item = getChecklistItems(criteriaId).find(i => i.id === entry.id);
   const label = item ? item.label : entry.id;
   if (entry.status === "Missing") {
     return `${label} was not included in the documents submitted.`;
@@ -148,7 +149,7 @@ export function loadCaseIntoEmail() {
   emailBulletsContainer.innerHTML = "";
   const issues = rec ? (rec.checklist || []).filter(c => c.status === "Non-compliant" || c.status === "Missing") : [];
   if (issues.length) {
-    issues.forEach(entry => addEmailBullet(describeChecklistFinding(entry)));
+    issues.forEach(entry => addEmailBullet(describeChecklistFinding(entry, rec.criteriaId)));
   } else {
     for (let i = 0; i < 4; i++) addEmailBullet();
   }
@@ -170,9 +171,10 @@ function getCurrentChecklistIssues() {
   return rec ? (rec.checklist || []).filter(c => c.status === "Non-compliant" || c.status === "Missing") : [];
 }
 
-function issuesForPrompt(issues) {
+function issuesForPrompt(issues, criteriaId) {
+  const items = getChecklistItems(criteriaId);
   return issues.map(entry => {
-    const item = CHECKLIST_ITEMS.find(i => i.id === entry.id);
+    const item = items.find(i => i.id === entry.id);
     return { id: entry.id, label: item ? item.label : entry.id, status: entry.status, note: entry.note || "" };
   });
 }
@@ -196,7 +198,7 @@ async function generateFindingsWithAI() {
       name: emailApplicantName.value.trim(),
       passport_number: emailPassportNumber.value.trim(),
     };
-    const promptIssues = issuesForPrompt(issues);
+    const promptIssues = issuesForPrompt(issues, state.record.criteriaId);
     let findings;
 
     if (getEngineMode() === "home") {

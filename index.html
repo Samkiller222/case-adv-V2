@@ -291,7 +291,13 @@
   .btn.stamp{ background:var(--accent); border-color:var(--accent-dark); color:#fff; }
   .btn.ok-flash{ background:var(--ok); border-color:var(--ok); color:#fff; }
 
-  .actions{ display:flex; gap:10px; margin-top:18px; flex-wrap:wrap; }
+  .actions{ display:flex; gap:10px; margin-top:18px; flex-wrap:wrap; align-items:center; }
+  .criteria-select{
+    font-family:var(--font-body); font-weight:600; font-size:13px;
+    padding:10px 14px; border-radius:var(--radius-sm); border:1px solid var(--border);
+    background:var(--surface-alt); color:var(--text); cursor:pointer;
+  }
+  .criteria-select:focus{ outline:none; border-color:var(--accent); box-shadow:0 0 0 3px var(--accent-bg); }
 
   .status{ font-family:var(--font-data); font-size:12px; color:var(--muted); margin-top:12px; min-height:16px; }
   .status.busy::before{ content:"◌ "; }
@@ -509,6 +515,7 @@
         <div class="actions">
           <button class="btn stamp" id="extractBtn" disabled>Extract case data</button>
           <button class="btn secondary" id="clearBtn">Clear files</button>
+          <select id="criteriaSelect" class="criteria-select" title="Checklist criteria — which checklist new extractions are checked against" aria-label="Checklist criteria"></select>
         </div>
         <div class="status" id="status"></div>
       </div>
@@ -534,12 +541,15 @@
   <section class="panel" style="margin-top:24px;">
     <div class="panel-head">
       <h2>Checklist compliance</h2>
-      <span class="tag" id="checklistTag">Not checked</span>
+      <div style="display:flex; gap:8px; align-items:center;">
+        <span class="tag" id="checklistCriteriaTag">Employment Visa</span>
+        <span class="tag" id="checklistTag">Not checked</span>
+      </div>
     </div>
     <div class="panel-body" id="checklistBody">
       <div class="empty-state">
         <img class="mark" src="icons/logo.png" alt="">
-        Compliance against the Employment Visa document checklist will appear here after extraction.
+        Compliance against the selected checklist will appear here after extraction.
       </div>
     </div>
   </section>

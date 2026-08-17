@@ -4,10 +4,11 @@
  */
 import { el, fileToBase64, makeStatusSetter } from "./utils.js";
 import { state } from "./state.js";
-import { FIELDS, CHECKLIST_ITEMS, GEMINI_MODEL } from "./config.js";
+import { FIELDS, GEMINI_MODEL } from "./config.js";
 import { getEngineMode, getApiKey, getHomeUrl, getHomeToken } from "./engine-settings.js";
+import { getCriteriaId } from "./criteria.js";
 import { extractPdfText } from "./pdf-extract.js";
-import { normalizeChecklist } from "./checklist.js";
+import { getChecklist, getChecklistItems, normalizeChecklist } from "./checklist.js";
 import { renderRecord } from "./record.js";
 
 const extractBtn = el("extractBtn");
@@ -31,12 +32,19 @@ async function runExtractionViaHomeServer() {
     setStatus("Enter your home server token first.", true);
     return;
   }
+  const criteriaId = getCriteriaId();
   extractBtn.disabled = true;
   setStatus("Sending documents to home server…");
 
   try {
     const formData = new FormData();
     state.files.forEach(({ file }) => formData.append("files", file, file.name));
+    // Forward-compatible hint for home servers that know how to use it —
+    // an unmodified server just ignores an unknown field. Either way, the
+    // response is normalized against this checklist client-side, so the
+    // record is always labeled correctly regardless of what the server
+    // actually checked.
+    formData.append("criteria", criteriaId);
 
     const resp = await fetch(`${url.replace(/\/$/, "")}/extract`, {
       method: "POST",
@@ -50,7 +58,8 @@ async function runExtractionViaHomeServer() {
     }
 
     const parsed = await resp.json();
-    parsed.checklist = normalizeChecklist(parsed.checklist);
+    parsed.criteriaId = criteriaId;
+    parsed.checklist = normalizeChecklist(parsed.checklist, criteriaId);
     state.record = parsed;
     renderRecord(true);
     setStatus(`Extracted from ${state.files.length} document${state.files.length === 1 ? "" : "s"} (home server). Review before saving.`);
@@ -65,8 +74,9 @@ async function runExtractionViaHomeServer() {
   }
 }
 
-function buildExtractionInstruction() {
+function buildExtractionInstruction(criteriaId) {
   const fieldKeys = FIELDS.map(f => f.key).join(", ");
+  const checklist = getChecklist(criteriaId);
   return `You are helping a visa case officer draft a case record from supporting documents.
 Read all the documents provided (text and/or images — passport pages, employer letters, appointment or flight confirmations, insurance certificates, etc.).
 Extract only what these documents actually state. Return ONLY a JSON object, no markdown fences, no commentary, with exactly these keys:
@@ -84,8 +94,8 @@ ${fieldKeys}.
 - comments: a short note on anything relevant you noticed (e.g. discrepancies, missing documents) — not a restatement of the other fields.
 - uncertain: separate from comments. List each field you were NOT confident about and why — e.g. handwriting was hard to read, two documents gave conflicting dates, a value was inferred rather than directly stated. Leave this empty ("") only if you're confident in every field you filled in.
 
-Additionally, check the uploaded documents against Malta's Central Visa Unit "Documentation Required for Employment Visa" checklist below. Return a "checklist" array in the JSON with exactly one entry per item, in this order, each an object with keys "id", "status", "note":
-${CHECKLIST_ITEMS.map((c, i) => `${i + 1}. id="${c.id}" — ${c.label}: ${c.criteria}`).join("\n")}
+Additionally, check the uploaded documents against Malta's Central Visa Unit "${checklist.title}" checklist below. Return a "checklist" array in the JSON with exactly one entry per item, in this order, each an object with keys "id", "status", "note":
+${getChecklistItems(criteriaId).map((c, i) => `${i + 1}. id="${c.id}" — ${c.label}: ${c.criteria}`).join("\n")}
 
 For each item, set "status" to exactly one of:
 - "Compliant": a document satisfying this item is present and meets the stated criteria.
@@ -101,6 +111,7 @@ async function runExtractionViaGemini() {
     setStatus("Enter your Gemini API key first.", true);
     return;
   }
+  const criteriaId = getCriteriaId();
   extractBtn.disabled = true;
   setStatus("Reading documents…");
 
@@ -128,7 +139,7 @@ async function runExtractionViaGemini() {
     setStatus("Extracting fields…");
 
     const body = {
-      contents: [{ role: "user", parts: [{ text: buildExtractionInstruction() }, ...parts] }],
+      contents: [{ role: "user", parts: [{ text: buildExtractionInstruction(criteriaId) }, ...parts] }],
       generationConfig: { responseMimeType: "application/json" },
     };
 
@@ -152,7 +163,8 @@ async function runExtractionViaGemini() {
 
     const cleaned = rawText.replace(/```json|```/g, "").trim();
     const parsed = JSON.parse(cleaned);
-    parsed.checklist = normalizeChecklist(parsed.checklist);
+    parsed.criteriaId = criteriaId;
+    parsed.checklist = normalizeChecklist(parsed.checklist, criteriaId);
 
     state.record = parsed;
     renderRecord(true);

@@ -1,0 +1,118 @@
+[
+  {
+    "id": "employment",
+    "label": "Employment Visa",
+    "title": "Documentation Required for Employment Visa",
+    "version": "Version 3 dated 18.03.2025",
+    "items": [
+      {
+        "id": "visa_form",
+        "label": "Visa Application Form",
+        "criteria": "Fully filled and signed by the applicant."
+      },
+      {
+        "id": "passport",
+        "label": "Passport",
+        "criteria": "Minimum validity of 8 months from the date of the visa application."
+      },
+      {
+        "id": "passport_photo",
+        "label": "Passport photo",
+        "criteria": "Meets ICAO standards (recent, plain light background, neutral expression, correct size/head proportions)."
+      },
+      {
+        "id": "aip_letter",
+        "label": "Approval in Principle (AIP) letter",
+        "criteria": "Present, and the visa is being applied for within 60 days of the AIP letter's issuance date."
+      },
+      {
+        "id": "vfs_appointment",
+        "label": "VFS Appointment Letter",
+        "criteria": "Present."
+      },
+      {
+        "id": "flight_tickets",
+        "label": "Prospective flight tickets",
+        "criteria": "Full itinerary provided, clearly showing the applicant's name, flight date, and all stops — preferably transiting outside the Schengen area."
+      },
+      {
+        "id": "insurance",
+        "label": "Medical & travel insurance",
+        "criteria": "Valid for the Schengen area; minimum €30,000 medical coverage; minimum 180 consecutive days, valid at least from the point of submission of the visa application; shows name, surname, and passport number; coverage is not restricted or linked to the applicant's place of residence and does not restrict the applicant to departing only from the country where the policy was issued. If the certificate doesn't show all of this, a table of benefits is required to confirm it."
+      },
+      {
+        "id": "accommodation",
+        "label": "Proof of prospective accommodation",
+        "criteria": "Matches the applicable accommodation type: (a) employer-provided free accommodation — notarised/lawyer-signed declaration by the host, a copy of the host's ID card, and (if a secondary address) proof of the host's link to that residence; OR (b) rented accommodation — a registered lease agreement signed by both parties stating duration, home address, applicant's name, and rent; OR (c) hotel/short-term/vacation rental — a booking for a minimum of 14 consecutive nights from the date of prospective arrival in Malta."
+      },
+      {
+        "id": "skills_pass",
+        "label": "Skills Pass (if applicable)",
+        "criteria": "Required only for applicants working directly or indirectly in the tourism and hospitality sector — Skills Pass Part 1 and Part 2 completion certificates issued by the Institute of Tourism Studies. Not applicable outside that sector."
+      },
+      {
+        "id": "fees",
+        "label": "Visa application fee",
+        "criteria": "€150 standard / €250 extended. This is a payment made by credit/visa card, not a document — always mark this item \"Not applicable\" since it cannot be verified from uploaded documents."
+      }
+    ]
+  },
+  {
+    "id": "sport",
+    "label": "Sports Trials Visa",
+    "title": "Documentation Required for Sports Trials Visa",
+    "version": "Version 1 dated 07.06.2025",
+    "items": [
+      {
+        "id": "visa_form",
+        "label": "Visa Application Form",
+        "criteria": "Fully filled and signed by the applicant."
+      },
+      {
+        "id": "passport",
+        "label": "Passport",
+        "criteria": "Minimum validity of 10 months from the date of the visa application."
+      },
+      {
+        "id": "passport_photo",
+        "label": "Passport photo",
+        "criteria": "Meets ICAO standards (recent, plain light background, neutral expression, correct size/head proportions)."
+      },
+      {
+        "id": "vfs_appointment",
+        "label": "VFS Appointment Letter",
+        "criteria": "Present."
+      },
+      {
+        "id": "invitation_letter",
+        "label": "Sports Club Invitation Letter",
+        "criteria": "An official invitation letter from a national sports club, endorsed and stamped by Sports Malta or another competent Sports Regulator (depending on the applicant's sport's governing body); signed and stamped, and stating the planned duration and nature of the trial."
+      },
+      {
+        "id": "club_declaration",
+        "label": "Sports Club Declaration",
+        "criteria": "A declaration from the sports club stating that, if the trial is successful, the applicant will be given a full-time contract as a sportsperson with the club in line with Maltese employment regulations — and that, if the trial is unsuccessful, the club will inform Identità."
+      },
+      {
+        "id": "insurance",
+        "label": "Medical & travel insurance",
+        "criteria": "Valid for the Schengen area; minimum €30,000 medical coverage; minimum 100 consecutive days, valid at least from the point of submission of the visa application; shows name, surname, and passport number. If the certificate doesn't show all of this, a table of benefits is required to confirm it."
+      },
+      {
+        "id": "financial_means",
+        "label": "Proof of financial means",
+        "criteria": "Sufficient funds for the whole duration of stay plus repatriation costs — at least 75% of the national minimum wage for every month of stay."
+      },
+      {
+        "id": "accommodation",
+        "label": "Proof of prospective accommodation",
+        "criteria": "Must be in the applicant's name, and match the applicable type: (a) host-provided free accommodation — declaration of proof by the host, notarised/lawyer-signed, a copy of the host's ID card, and (if a secondary address) proof of the host's link to that residence (e.g. contract of sale, lease agreement, or utility bill); OR (b) rented accommodation — a lease agreement signed by both parties stating duration, home address, applicant's name, and rent; OR (c) hotel/short-term/vacation rental — a booking for a minimum of 14 consecutive nights from the date of prospective arrival in Malta."
+      },
+      {
+        "id": "fees",
+        "label": "Visa application fee",
+        "criteria": "€150 standard / €250 extended. This is a payment made by credit/visa card, not a document — always mark this item \"Not applicable\" since it cannot be verified from uploaded documents."
+      }
+    ]
+  }
+]

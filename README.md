@@ -19,16 +19,24 @@ No backend required. It's a static page (`index.html`, the ES modules under
   **extraction engine** you pick — your own **home server**, or the
   **Gemini API** as a cloud fallback (Gemini reads PDFs and images
   natively),
-- checks the uploaded documents against Malta's Central Visa Unit
-  "Documentation Required for Employment Visa" checklist (10 items: visa
-  form, passport validity, photo, AIP timing, VFS appointment, flight
-  itinerary, insurance thresholds, accommodation proof, Skills Pass,
-  fees) and shows each item as Compliant / Non-compliant / Missing / Not
-  applicable, with a one-line reason — click any item to expand it and
-  **override the status and reason yourself**; the AI's verdict is a
-  starting point, not the final word, and your edit flows through to the
-  case log, CSV/JSON export, and the Email Writer's findings the same way
-  an AI-determined one would,
+- checks the uploaded documents against a Malta Central Visa Unit
+  "Documentation Required for ... Visa" checklist — **Employment Visa** (10
+  items: visa form, passport validity, photo, AIP timing, VFS appointment,
+  flight itinerary, insurance thresholds, accommodation proof, Skills
+  Pass, fees) or **Sports Trials Visa** (10 items: visa form, passport
+  validity, photo, VFS appointment, sports club invitation letter, sports
+  club declaration, insurance thresholds, proof of financial means,
+  accommodation proof, fees), picked from the **checklist dropdown** next
+  to "Clear files" in the intake panel (more checklists can be added to
+  `data/checklists.json` without touching any code) — and shows each item
+  as Compliant / Non-compliant / Missing / Not applicable, with a one-line
+  reason — click any item to expand it and **override the status and
+  reason yourself**; the AI's verdict is a starting point, not the final
+  word, and your edit flows through to the case log, CSV/JSON export, and
+  the Email Writer's findings the same way an AI-determined one would.
+  Each case remembers which checklist it was actually checked against, so
+  switching the dropdown never reinterprets an already-extracted or
+  already-saved case — it only affects the *next* extraction,
 - shows you the draft so you can correct anything before it's saved,
 - keeps a running case log in the browser (`localStorage`) with CSV export
   (including a `checklist_issues` column summarizing any flagged items) and
@@ -118,10 +126,14 @@ page changes:
 
 - **Home server (local model)** — your own server, reachable at a URL you
   provide. For extraction, the page `POST`s files as `multipart/form-data`
-  to `<your-url>/extract` with `Authorization: Bearer <your-token>`, and
-  expects back a JSON body shaped like the extracted record (the same keys
-  as the Gemini path, plus an optional `checklist` array — see
-  `js/checklist.js`/`normalizeChecklist` for the exact shape). For the Email Writer's
+  to `<your-url>/extract` with `Authorization: Bearer <your-token>`, plus a
+  `criteria` field naming the checklist selected in the intake dropdown
+  (e.g. `employment`, `sport` — see `data/checklists.json` for the full
+  list of ids); a server that doesn't look at that field is unaffected,
+  since the response is normalized against that checklist client-side
+  either way. Expects back a JSON body shaped like the extracted record
+  (the same keys as the Gemini path, plus an optional `checklist` array —
+  see `js/checklist.js`/`normalizeChecklist` for the exact shape). For the Email Writer's
   "Generate findings with AI", it `POST`s JSON to `<your-url>/findings`
   (same bearer-token auth) with body
   `{ "applicant": { "name", "passport_number" }, "issues": [{ "id", "label", "status", "note" }, ...] }`
@@ -206,9 +218,11 @@ from or writes to any other repository.
 - `index.html` — markup, styles, and the pre-first-paint theme script.
 - `data/*.json` — static config data, editable without touching any logic:
   - `fields.json` — the extracted-record form fields.
-  - `checklist-items.json` — the CVU Employment Visa checklist items and criteria.
+  - `checklists.json` — every CVU checklist the app can verify against (Employment
+    Visa, Sports Trials Visa, ...), each with its items and criteria. Add a new
+    entry here to support another checklist — no code changes needed.
   - `accent-presets.json` — theme accent-color options.
-  - `view-meta.json` — per-view header text (intake/email/options).
+  - `view-meta.json` — per-view header text (intake/case-log/statistics/email/options).
   - `checklist-links.json` — CVU checklist PDF links, by application type.
   - `app-config.json` — the Gemini model id and checklist status list.
 - `js/*.js` — ES modules, one per piece of functionality:
@@ -219,14 +233,18 @@ from or writes to any other repository.
   - `pwa.js` — service worker registration.
   - `theme.js` — light/dark theme + accent color picker.
   - `engine-settings.js` — extraction engine (home server / Gemini) settings.
-  - `menu.js` — the apps menu and intake/email/options view switching.
+  - `criteria.js` — the intake panel's checklist dropdown (which checklist new
+    extractions are checked against).
+  - `menu.js` — the apps menu and view switching.
   - `files-db.js` — IndexedDB persistence for in-progress attachments.
   - `file-intake.js` — drag/drop file intake and the file list.
   - `pdf-extract.js` — PDF text extraction via pdf.js.
-  - `checklist.js` — checklist normalization and the compliance panel.
-  - `extraction.js` — runs extraction against the selected engine.
+  - `checklist.js` — resolving a record's checklist, normalization, and the
+    compliance panel.
+  - `extraction.js` — runs extraction against the selected engine and checklist.
   - `record.js` — the draft record form, and saving/loading it to the case log.
-  - `case-log.js` — the case log table, CSV export, JSON backup/restore.
+  - `case-log.js` — the case log table, filters, CSV export, JSON backup/restore.
+  - `statistics.js` — final-decision/employer/job-title breakdowns of the case log.
   - `email-writer.js` — the revision-request email drafting tool.
 - `sw.js` — the service worker (offline caching); bump `CACHE_VERSION` here
   when you change any file listed in its `SHELL_ASSETS`.

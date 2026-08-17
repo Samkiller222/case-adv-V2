@@ -11,6 +11,7 @@ import "./state.js"; // loading it is enough to run the log-id backfill + persis
 import { initServiceWorker } from "./pwa.js";
 import { initTheme } from "./theme.js";
 import { initEngineSettings } from "./engine-settings.js";
+import { initCriteria } from "./criteria.js";
 import { initMenu, switchView } from "./menu.js";
 import { initFileIntake, renderFileList } from "./file-intake.js";
 import { initExtraction } from "./extraction.js";
@@ -23,6 +24,7 @@ import { makeStatusSetter } from "./utils.js";
 
 initServiceWorker();
 initEngineSettings();
+initCriteria();
 initTheme();
 initMenu();
 initFileIntake();
