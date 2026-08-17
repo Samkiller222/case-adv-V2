@@ -17,18 +17,35 @@ async function loadJson(path) {
   return res.json();
 }
 
-// The extracted-record form fields, in display order (data/fields.json).
-export const FIELDS = await loadJson("./data/fields.json");
+// Extracted-record form fields common to every case, split into the
+// identity block shown first (name/surname/gender/passport) and the
+// tracking block shown last (result/comments/uncertain) — everything in
+// between is criteria-specific (see getFields below) (data/fields.json).
+const COMMON_FIELDS = await loadJson("./data/fields.json");
 
 // Every checklist the app can verify documents against — Malta CVU's
 // "Documentation Required for ... Visa" series. Each entry is
-// { id, label, title, version, items }, where items is the same shape as
-// the old single checklist (id, display label, compliance criteria text)
-// used both on-screen and in the extraction prompt (data/checklists.json).
-// Which one applies to a given case is chosen via the intake panel's
-// checklist dropdown (see js/criteria.js) and stored per-record, since a
-// saved case always keeps the checklist it was actually checked against.
+// { id, label, title, version, fields, items }: items is the compliance
+// checklist (id, display label, criteria text) used both on-screen and in
+// the extraction prompt; fields are the extra draft-record boxes specific
+// to that checklist (e.g. Sports Trials tracks a sports club and trial
+// duration instead of Employment's AIP/flight dates and job details)
+// (data/checklists.json). Which one applies to a given case is chosen via
+// the intake panel's checklist dropdown (see js/criteria.js) and stored
+// per-record, since a saved case always keeps the checklist — and field
+// set — it was actually extracted with.
 export const CHECKLISTS = await loadJson("./data/checklists.json");
+
+// The full set of draft-record fields for a given checklist: the common
+// identity fields, then that checklist's own fields, then the common
+// tracking fields. Unknown/missing criteriaId falls back to the first
+// checklist (Employment Visa), same as js/checklist.js's getChecklist —
+// this reconstructs exactly the original fixed field list for records
+// that predate multi-checklist support.
+export function getFields(criteriaId) {
+  const checklist = CHECKLISTS.find(c => c.id === criteriaId) || CHECKLISTS[0];
+  return [...COMMON_FIELDS.prefix, ...checklist.fields, ...COMMON_FIELDS.suffix];
+}
 
 // Accent color presets for the theme picker, each with light/dark variants
 // (data/accent-presets.json).

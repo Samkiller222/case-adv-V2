@@ -3,7 +3,7 @@
  */
 import { el, makeStatusSetter } from "./utils.js";
 import { state, persistLog } from "./state.js";
-import { FIELDS } from "./config.js";
+import { getFields } from "./config.js";
 import { renderChecklist } from "./checklist.js";
 import { renderFileList } from "./file-intake.js";
 import { clearFilesDB } from "./files-db.js";
@@ -44,7 +44,9 @@ export function renderRecord(justExtracted) {
   const grid = document.createElement("div");
   grid.className = "fields-grid";
 
-  FIELDS.forEach(f => {
+  // The record's own criteriaId decides which boxes appear here — the
+  // same checklist that governs the compliance panel above.
+  getFields(state.record.criteriaId).forEach(f => {
     const field = document.createElement("div");
     field.className = "field" + (f.full ? " full" : "");
     const label = document.createElement("label");

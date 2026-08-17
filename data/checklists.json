@@ -4,6 +4,18 @@
     "label": "Employment Visa",
     "title": "Documentation Required for Employment Visa",
     "version": "Version 3 dated 18.03.2025",
+    "fields": [
+      { "key": "date_appointment", "label": "Date appointment", "type": "text" },
+      { "key": "aip_date", "label": "AIP Date", "type": "text" },
+      { "key": "flight_date", "label": "Flight Date", "type": "text" },
+      { "key": "accommodation", "label": "Accommodation", "type": "text" },
+      { "key": "insurance", "label": "Insurance (start date)", "type": "text" },
+      { "key": "insurance_expiry", "label": "Insurance Expiry", "type": "text" },
+      { "key": "skills_pass", "label": "Skills pass", "type": "select", "options": ["", "Yes", "No", "Not required"] },
+      { "key": "pre_departure", "label": "Pre-Departure course", "type": "select", "options": ["", "Yes", "No", "Not required"] },
+      { "key": "job_title", "label": "Job title", "type": "text" },
+      { "key": "employer", "label": "Employer", "type": "text" }
+    ],
     "items": [
       {
         "id": "visa_form",
@@ -62,6 +74,15 @@
     "label": "Sports Trials Visa",
     "title": "Documentation Required for Sports Trials Visa",
     "version": "Version 1 dated 07.06.2025",
+    "fields": [
+      { "key": "date_appointment", "label": "VFS Appointment Date", "type": "text" },
+      { "key": "sports_club", "label": "Sports Club / Federation", "type": "text" },
+      { "key": "trial_duration", "label": "Planned Trial Duration", "type": "text" },
+      { "key": "accommodation", "label": "Accommodation", "type": "text" },
+      { "key": "insurance", "label": "Insurance (start date)", "type": "text" },
+      { "key": "insurance_expiry", "label": "Insurance Expiry", "type": "text" },
+      { "key": "financial_means", "label": "Proof of financial means", "type": "select", "options": ["", "Yes", "No", "Not required"] }
+    ],
     "items": [
       {
         "id": "visa_form",

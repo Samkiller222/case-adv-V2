@@ -4,9 +4,13 @@ A single-page tool: upload supporting documents for a case (passport page, emplo
 letter, appointment/flight confirmation, insurance certificate), and it drafts a
 case record matching the fields below for you to review, edit, and log.
 
-Fields extracted: Name, Surname, Gender, Passport number, Date appointment, AIP Date,
-Flight Date, Accommodation, Insurance, Insurance Expiry, Skills pass, Job title,
-Employer, result, Comments.
+The draft record's fields depend on which checklist is selected (see below) — Name,
+Surname, Gender, Passport number, result, Comments, and Uncertain about are always
+present; everything else is specific to the checklist:
+- **Employment Visa**: Date appointment, AIP Date, Flight Date, Accommodation,
+  Insurance, Insurance Expiry, Skills pass, Pre-Departure course, Job title, Employer.
+- **Sports Trials Visa**: VFS Appointment Date, Sports Club / Federation, Planned
+  Trial Duration, Accommodation, Insurance, Insurance Expiry, Proof of financial means.
 
 No backend required. It's a static page (`index.html`, the ES modules under
 `js/`, and the config data under `data/`) that:
@@ -217,10 +221,15 @@ from or writes to any other repository.
 
 - `index.html` — markup, styles, and the pre-first-paint theme script.
 - `data/*.json` — static config data, editable without touching any logic:
-  - `fields.json` — the extracted-record form fields.
+  - `fields.json` — the draft-record fields common to every checklist: `prefix`
+    (name/surname/gender/passport, shown first) and `suffix` (result/comments/
+    uncertain, shown last).
   - `checklists.json` — every CVU checklist the app can verify against (Employment
-    Visa, Sports Trials Visa, ...), each with its items and criteria. Add a new
-    entry here to support another checklist — no code changes needed.
+    Visa, Sports Trials Visa, ...), each with its own compliance `items` and its
+    own extra draft-record `fields` (the boxes between the common prefix/suffix
+    above — e.g. Sports Trials tracks a sports club and trial duration instead of
+    Employment's AIP/flight dates and job details). Add a new entry here to
+    support another checklist — no code changes needed.
   - `accent-presets.json` — theme accent-color options.
   - `view-meta.json` — per-view header text (intake/case-log/statistics/email/options).
   - `checklist-links.json` — CVU checklist PDF links, by application type.

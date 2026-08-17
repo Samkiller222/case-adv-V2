@@ -4,7 +4,7 @@
  */
 import { el, fileToBase64, makeStatusSetter } from "./utils.js";
 import { state } from "./state.js";
-import { FIELDS, GEMINI_MODEL } from "./config.js";
+import { getFields, GEMINI_MODEL } from "./config.js";
 import { getEngineMode, getApiKey, getHomeUrl, getHomeToken } from "./engine-settings.js";
 import { getCriteriaId } from "./criteria.js";
 import { extractPdfText } from "./pdf-extract.js";
@@ -75,24 +75,47 @@ async function runExtractionViaHomeServer() {
 }
 
 function buildExtractionInstruction(criteriaId) {
-  const fieldKeys = FIELDS.map(f => f.key).join(", ");
+  const fields = getFields(criteriaId);
+  const fieldKeys = fields.map(f => f.key).join(", ");
+  const hasField = (key) => fields.some(f => f.key === key);
   const checklist = getChecklist(criteriaId);
+
+  // Field-specific guidance only makes sense for fields this checklist
+  // actually has — a Sports Trials extraction is never asked about
+  // skills_pass, and an Employment one is never asked about sports_club.
+  const bullets = ['- gender must be "Male", "Female", or "" if unclear.'];
+  if (hasField("skills_pass") || hasField("pre_departure")) {
+    bullets.push(`- skills_pass and pre_departure are TWO SEPARATE things that are easy to confuse — read carefully:
+  - skills_pass = "Yes" if you see any "Skills Pass" branded certificate — the interlocking diamond/arrow Skills Pass logo and/or "Skills Pass" wording in the title (e.g. "Certificate of Skills Pass Achievement"). This can be issued by different bodies with different layouts (e.g. "Skills Pass Malta" with an ISSUE DATE/RECIPIENT/ISSUER layout, or "Institute of Tourism Studies - Malta" with a Full Name/Candidate Number/Job Family/Level layout, or others) — issuer and layout vary, the Skills Pass branding is the constant. Note: its batch or course name may itself contain the word "predeparture" (e.g. "Phase 2 predeparture batch 11") — that is just naming a training session/batch, it does NOT mean this document belongs to pre_departure. If the document has Skills Pass branding, set skills_pass, not pre_departure, regardless of that wording.
+  - pre_departure = "Yes" only if you see a "PRE-DEPARTURE COURSE — Certificate of Achievement" issued by the Government of Malta (Ministry for Home Affairs, Security and Employment), listing specific course topics (e.g. language, hygiene, culture, transport). If you see this document type, set pre_departure, not skills_pass.
+  - Each is "No" or "Not required" only if stated as such in a document; "" if neither document type is present at all.`);
+  }
+  if (hasField("financial_means")) {
+    bullets.push('- financial_means = "Yes" if the documents show sufficient funds for the whole stay plus repatriation costs (at least 75% of the national minimum wage per month of stay), "No" if shown but insufficient, "Not required" only if stated as such, or "" if not addressed at all.');
+  }
+  bullets.push('- result must be one of "passed", "email sent", "email received", "refused", "sent to interview", or "" if not stated.');
+  if (hasField("insurance")) {
+    bullets.push('- insurance is the insurance policy START DATE (matches the format of a date field in the source form) — do NOT put the insurance company/provider name here, only a date.');
+  }
+  if (hasField("insurance_expiry")) {
+    bullets.push('- insurance_expiry is the insurance policy EXPIRY date, same rule.');
+  }
+  if (hasField("sports_club")) {
+    bullets.push('- sports_club is the name of the national sports club or federation issuing the invitation letter.');
+  }
+  if (hasField("trial_duration")) {
+    bullets.push('- trial_duration is the planned duration and/or nature of the trial as stated in the invitation letter (e.g. specific dates, or a length like "2 weeks").');
+  }
+  bullets.push("- Dates: use whatever format appears in the source document; do not invent a date that isn't present.");
+  bullets.push("- If a field is not present in any document, return an empty string for it — never guess or fabricate.");
+  bullets.push("- comments: a short note on anything relevant you noticed (e.g. discrepancies, missing documents) — not a restatement of the other fields.");
+  bullets.push('- uncertain: separate from comments. List each field you were NOT confident about and why — e.g. handwriting was hard to read, two documents gave conflicting dates, a value was inferred rather than directly stated. Leave this empty ("") only if you\'re confident in every field you filled in.');
+
   return `You are helping a visa case officer draft a case record from supporting documents.
 Read all the documents provided (text and/or images — passport pages, employer letters, appointment or flight confirmations, insurance certificates, etc.).
 Extract only what these documents actually state. Return ONLY a JSON object, no markdown fences, no commentary, with exactly these keys:
 ${fieldKeys}.
-- gender must be "Male", "Female", or "" if unclear.
-- skills_pass and pre_departure are TWO SEPARATE things that are easy to confuse — read carefully:
-  - skills_pass = "Yes" if you see any "Skills Pass" branded certificate — the interlocking diamond/arrow Skills Pass logo and/or "Skills Pass" wording in the title (e.g. "Certificate of Skills Pass Achievement"). This can be issued by different bodies with different layouts (e.g. "Skills Pass Malta" with an ISSUE DATE/RECIPIENT/ISSUER layout, or "Institute of Tourism Studies - Malta" with a Full Name/Candidate Number/Job Family/Level layout, or others) — issuer and layout vary, the Skills Pass branding is the constant. Note: its batch or course name may itself contain the word "predeparture" (e.g. "Phase 2 predeparture batch 11") — that is just naming a training session/batch, it does NOT mean this document belongs to pre_departure. If the document has Skills Pass branding, set skills_pass, not pre_departure, regardless of that wording.
-  - pre_departure = "Yes" only if you see a "PRE-DEPARTURE COURSE — Certificate of Achievement" issued by the Government of Malta (Ministry for Home Affairs, Security and Employment), listing specific course topics (e.g. language, hygiene, culture, transport). If you see this document type, set pre_departure, not skills_pass.
-  - Each is "No" or "Not required" only if stated as such in a document; "" if neither document type is present at all.
-- result must be one of "passed", "email sent", "email received", "refused", "sent to interview", or "" if not stated.
-- insurance is the insurance policy START DATE (matches the format of a date field in the source form) — do NOT put the insurance company/provider name here, only a date.
-- insurance_expiry is the insurance policy EXPIRY date, same rule.
-- Dates: use whatever format appears in the source document; do not invent a date that isn't present.
-- If a field is not present in any document, return an empty string for it — never guess or fabricate.
-- comments: a short note on anything relevant you noticed (e.g. discrepancies, missing documents) — not a restatement of the other fields.
-- uncertain: separate from comments. List each field you were NOT confident about and why — e.g. handwriting was hard to read, two documents gave conflicting dates, a value was inferred rather than directly stated. Leave this empty ("") only if you're confident in every field you filled in.
+${bullets.join("\n")}
 
 Additionally, check the uploaded documents against Malta's Central Visa Unit "${checklist.title}" checklist below. Return a "checklist" array in the JSON with exactly one entry per item, in this order, each an object with keys "id", "status", "note":
 ${getChecklistItems(criteriaId).map((c, i) => `${i + 1}. id="${c.id}" — ${c.label}: ${c.criteria}`).join("\n")}

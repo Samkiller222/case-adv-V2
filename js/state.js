@@ -7,7 +7,7 @@
 
 export const state = {
   files: [],            // [{id, file}] — documents attached to the current draft
-  record: null,         // last extracted record (object keyed by FIELDS[].key), plus .checklist
+  record: null,         // last extracted record: fields keyed per getFields(record.criteriaId), plus .criteriaId and .checklist
   editingCaseId: null,  // set while editing a saved case log entry, so Save updates it instead of adding a new one
   log: JSON.parse(localStorage.getItem("case_log") || "[]")
     .map(c => c.id ? c : { ...c, id: crypto.randomUUID() }), // backfill ids for entries saved before edit support existed

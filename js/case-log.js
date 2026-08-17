@@ -7,7 +7,7 @@
  */
 import { el, escapeHtml, csvCell, makeStatusSetter } from "./utils.js";
 import { state, persistLog } from "./state.js";
-import { FIELDS } from "./config.js";
+import { CHECKLISTS, getFields } from "./config.js";
 import { getChecklistItems, normalizeChecklist } from "./checklist.js";
 // See record.js for the note on this being a deliberate circular import.
 import { editCaseFromLog, renderRecord } from "./record.js";
@@ -23,7 +23,11 @@ const filters = { query: "", result: "", checklist: "" };
 
 function matchesFilters(rec) {
   if (filters.query) {
-    const haystack = [rec.name, rec.surname, rec.passport_number, rec.employer, rec.job_title]
+    // A few extra criteria-specific fields (employer/job_title for
+    // Employment, sports_club for Sports Trials) — harmless to include
+    // all of them regardless of which criteria rec actually has, since
+    // .filter(Boolean) drops whichever ones are undefined on it.
+    const haystack = [rec.name, rec.surname, rec.passport_number, rec.employer, rec.job_title, rec.sports_club]
       .filter(Boolean).join(" ").toLowerCase();
     if (!haystack.includes(filters.query)) return false;
   }
@@ -115,7 +119,13 @@ function initCsvExport() {
   el("exportBtn").addEventListener("click", () => {
     const setStatus = makeStatusSetter("status");
     if (state.log.length === 0) { setStatus("No cases to export yet.", true); return; }
-    const keys = FIELDS.map(f => f.key);
+    // The log can hold cases from more than one checklist, each with its
+    // own field set — the CSV needs one fixed column set covering all of
+    // them, so a given row just leaves criteria-specific columns it
+    // doesn't have blank. Union preserves each checklist's field order,
+    // Employment Visa's (the default, first-listed checklist) columns
+    // appearing before any other checklist's own extra fields.
+    const keys = [...new Set(CHECKLISTS.flatMap(c => getFields(c.id).map(f => f.key)))];
     const header = [...keys, "checklist_issues"].join(",");
     const rows = state.log.map(rec => {
       const base = keys.map(k => csvCell(rec[k] || "")).join(",");
@@ -210,7 +220,10 @@ function initLogFilters() {
 
   // The result dropdown's options come from the same field config the
   // draft form uses, so it can never drift out of sync with real values.
-  const resultField = FIELDS.find(f => f.key === "result");
+  // "result" is a common field on every checklist, so any criteria's
+  // field list has the same options — CHECKLISTS[0] (Employment Visa) is
+  // just a convenient one to read it from.
+  const resultField = getFields(CHECKLISTS[0].id).find(f => f.key === "result");
   const resultOptions = (resultField ? resultField.options : []).filter(Boolean);
   resultSelect.innerHTML = [
     '<option value="">All results</option>',
