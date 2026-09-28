@@ -8,8 +8,8 @@
  */
 import { el, makeStatusSetter } from "./utils.js";
 import { state } from "./state.js";
-import { CHECKLIST_LINKS, GEMINI_MODEL } from "./config.js";
-import { getEngineMode, getApiKey, getHomeUrl, getHomeToken } from "./engine-settings.js";
+import { CHECKLIST_LINKS } from "./config.js";
+import { getEngineMode, getHomeUrl, getHomeToken, callGemini } from "./engine-settings.js";
 import { getChecklistItems } from "./checklist.js";
 
 const emailApplicantName = el("emailApplicantName");
@@ -219,9 +219,6 @@ async function generateFindingsWithAI() {
       const data = await resp.json();
       findings = Array.isArray(data.findings) ? data.findings : [];
     } else {
-      const key = getApiKey();
-      if (!key) throw new Error("Enter your Gemini API key in Options first.");
-
       const issuesText = promptIssues
         .map((e, i) => `${i + 1}. ${e.label} — status: ${e.status}${e.note ? `; note: ${e.note}` : ""}`)
         .join("\n");
@@ -233,22 +230,10 @@ ${issuesText}
 
 Return ONLY a JSON array of strings, no markdown fences, no commentary, with exactly ${promptIssues.length} entries in the same order as the issues above.`;
 
-      const resp = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${encodeURIComponent(key)}`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            contents: [{ role: "user", parts: [{ text: prompt }] }],
-            generationConfig: { responseMimeType: "application/json" },
-          }),
-        }
-      );
-      if (!resp.ok) {
-        const errText = await resp.text();
-        throw new Error(`API error ${resp.status}: ${errText.slice(0, 300)}`);
-      }
-      const data = await resp.json();
+      const { data } = await callGemini({
+        contents: [{ role: "user", parts: [{ text: prompt }] }],
+        generationConfig: { responseMimeType: "application/json" },
+      });
       const rawText = data?.candidates?.[0]?.content?.parts?.map(p => p.text).filter(Boolean).join("") || "";
       if (!rawText) throw new Error("No text in response — the model may have blocked the content or returned nothing.");
       findings = JSON.parse(rawText.replace(/```json|```/g, "").trim());

@@ -4,8 +4,8 @@
  */
 import { el, fileToBase64, makeStatusSetter } from "./utils.js";
 import { state } from "./state.js";
-import { getFields, GEMINI_MODEL } from "./config.js";
-import { getEngineMode, getApiKey, getHomeUrl, getHomeToken } from "./engine-settings.js";
+import { getFields } from "./config.js";
+import { getEngineMode, getApiKey, getHomeUrl, getHomeToken, getGeminiModel, callGemini } from "./engine-settings.js";
 import { getCriteriaId } from "./criteria.js";
 import { extractPdfText } from "./pdf-extract.js";
 import { getChecklist, getChecklistItems, normalizeChecklist } from "./checklist.js";
@@ -159,28 +159,14 @@ async function runExtractionViaGemini() {
       }
     }
 
-    setStatus("Extracting fields…");
+    setStatus(`Extracting fields with ${getGeminiModel()}…`);
 
     const body = {
       contents: [{ role: "user", parts: [{ text: buildExtractionInstruction(criteriaId) }, ...parts] }],
       generationConfig: { responseMimeType: "application/json" },
     };
 
-    const resp = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${encodeURIComponent(key)}`,
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(body),
-      }
-    );
-
-    if (!resp.ok) {
-      const errText = await resp.text();
-      throw new Error(`API error ${resp.status}: ${errText.slice(0, 300)}`);
-    }
-
-    const data = await resp.json();
+    const { data, model } = await callGemini(body);
     const rawText = data?.candidates?.[0]?.content?.parts?.map(p => p.text).filter(Boolean).join("") || "";
     if (!rawText) throw new Error("No text in response — the model may have blocked the content or returned nothing.");
 
@@ -191,7 +177,7 @@ async function runExtractionViaGemini() {
 
     state.record = parsed;
     renderRecord(true);
-    setStatus(`Extracted from ${state.files.length} document${state.files.length === 1 ? "" : "s"}. Review before saving.`);
+    setStatus(`Extracted from ${state.files.length} document${state.files.length === 1 ? "" : "s"}. Review before saving.${model !== getGeminiModel() ? ` (${getGeminiModel()} was busy — used ${model}.)` : ""}`);
   } catch (err) {
     console.error(err);
     setStatus(err.message || "Extraction failed.", true);

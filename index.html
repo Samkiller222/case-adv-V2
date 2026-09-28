@@ -791,6 +791,17 @@
             Note: on Google's free tier, document content sent for extraction may be used to improve Google's products — worth knowing given these are case documents. Also used by the Email Writer's "Generate findings with AI" action.
           </small>
         </div>
+
+        <div class="keyrow">
+          <label for="geminiModel">Gemini model</label>
+          <select id="geminiModel"></select>
+          <small id="geminiModelInfo"></small>
+          <label style="display:flex; align-items:center; gap:8px; margin-top:10px; margin-bottom:0; cursor:pointer;">
+            <input type="checkbox" id="geminiFallback" checked>
+            <span>If the model is busy (503 / 429), automatically try the other models</span>
+          </label>
+          <small>Prices are rough, per 1M tokens on the paid tier; "per case" assumes ~20k tokens of documents in and ~2k out. The free tier costs nothing but has low daily limits.</small>
+        </div>
       </div>
     </section>
 
