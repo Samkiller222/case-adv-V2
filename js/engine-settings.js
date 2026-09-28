@@ -5,7 +5,8 @@
  * DOM or localStorage directly.
  */
 import { el } from "./utils.js";
-import { GEMINI_MODEL, GEMINI_MODELS } from "./config.js";
+import { GEMINI_MODEL } from "./config.js";
+import { GEMINI_MODELS } from "./gemini-models.js";
 
 const apiKeyInput = el("apiKey");
 const engineModeEl = el("engineMode");

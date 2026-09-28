@@ -17,7 +17,7 @@
  * that must reach already-installed users promptly — it forces the old
  * cache to be dropped on activate.
  */
-const CACHE_VERSION = "v7";
+const CACHE_VERSION = "v8";
 const SHELL_CACHE = `case-register-shell-${CACHE_VERSION}`;
 const CDN_CACHE = `case-register-cdn-${CACHE_VERSION}`;
 
@@ -32,6 +32,7 @@ const SHELL_ASSETS = [
   "./js/pwa.js",
   "./js/theme.js",
   "./js/engine-settings.js",
+  "./js/gemini-models.js",
   "./js/criteria.js",
   "./js/menu.js",
   "./js/files-db.js",

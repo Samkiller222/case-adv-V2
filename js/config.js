@@ -62,7 +62,4 @@ export const CHECKLIST_LINKS = await loadJson("./data/checklist-links.json");
 // Small standalone settings (data/app-config.json).
 const APP_CONFIG = await loadJson("./data/app-config.json");
 export const GEMINI_MODEL = APP_CONFIG.geminiModel;
-// Gemini models selectable in Options, each { id, label, summary, pricing }.
-// Order matters: it's also the order tried when auto-fallback kicks in.
-export const GEMINI_MODELS = APP_CONFIG.geminiModels || [];
 export const CHECKLIST_STATUSES = APP_CONFIG.checklistStatuses;
